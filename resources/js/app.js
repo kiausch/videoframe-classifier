@@ -49,7 +49,7 @@ const app = createApp({
     },
     computed: {
         imageQueueFolder() {
-            return this.outputFolder ? this.outputFolder + '\\queue' : null;
+            return this.outputFolder ? this.outputFolder + '/queue' : null;
         },
         canPreprocess() {
             return this.selectedVideoFolder && this.outputFolder && this.videoFiles.length > 0;
@@ -224,7 +224,7 @@ const app = createApp({
             try {
                 if (!this.outputFolder) return;
 
-                const datasetPath = this.outputFolder + '\\dataset.yaml';
+                const datasetPath = this.outputFolder + '/dataset.yaml';
                 try {
                     const content = await Neutralino.filesystem.readFile(datasetPath);
                     this.parseDatasetYaml(content);
@@ -270,7 +270,7 @@ const app = createApp({
 
         async loadProcessedVideoList() {
             try {
-                const processedPath = this.outputFolder + '\\processed_videos.txt';
+                const processedPath = this.outputFolder + '/processed_videos.txt';
                 const content = await Neutralino.filesystem.readFile(processedPath);
                 const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
                 for (const line of lines) {
@@ -282,7 +282,7 @@ const app = createApp({
 
         async saveProcessedVideoList() {
             try {
-                const processedPath = this.outputFolder + '\\processed_videos.txt';
+                const processedPath = this.outputFolder + '/processed_videos.txt';
                 const content = [...this.processedVideoFiles].join('\n');
                 await Neutralino.filesystem.writeFile(processedPath, content);
             } catch (error) {
@@ -348,9 +348,9 @@ const app = createApp({
 
                 for (const video of this.selectedVideoFiles) {
                     try {
-                        const videoPath = this.selectedVideoFolder + '\\' + video;
+                        const videoPath = this.selectedVideoFolder + '/' + video;
                         const imageBaseName = video.split('.')[0];
-                        const outputPattern = this.imageQueueFolder + '\\' + imageBaseName + '_%05d.jpg';
+                        const outputPattern = this.imageQueueFolder + '/' + imageBaseName + '_%05d.jpg';
 
                         // Build FFmpeg command
                         const command = `ffmpeg -i "${videoPath}" -vf fps=1 "${outputPattern}"`;
@@ -388,7 +388,7 @@ const app = createApp({
                 const label = this.datasetLabels.find(l => l.id === labelId);
                 if (!label) return;
 
-                const labelFolder = this.outputFolder + '\\' + label.name;
+                const labelFolder = this.outputFolder + '/' + label.name;
 
                 // Create label folder if it doesn't exist
                 try {
@@ -400,8 +400,8 @@ const app = createApp({
                 let movedCount = 0;
                 for (const image of this.selectedImages) {
                     try {
-                        const sourcePath = this.imageQueueFolder + '\\' + image;
-                        const destPath = labelFolder + '\\' + image;
+                        const sourcePath = this.imageQueueFolder + '/' + image;
+                        const destPath = labelFolder + '/' + image;
                         await Neutralino.filesystem.move(sourcePath, destPath);
                         movedCount++;
                     } catch (error) {

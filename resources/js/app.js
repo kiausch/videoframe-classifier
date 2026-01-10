@@ -16,6 +16,7 @@ const app = createApp({
             currentVideoUrl: null,
             outputFolder: null,
             isPreprocessing: false,
+            hideProcessedVideos: true,
 
             // Center Column - Image Gallery
             imageFiles: [],
@@ -53,6 +54,12 @@ const app = createApp({
         },
         canPreprocess() {
             return this.selectedVideoFolder && this.outputFolder && this.videoFiles.length > 0;
+        },
+        filteredVideoFiles() {
+            if (this.hideProcessedVideos) {
+                return this.videoFiles.filter(video => !this.processedVideoFiles.has(video));
+            }
+            return this.videoFiles;
         }
     },
     mounted() {

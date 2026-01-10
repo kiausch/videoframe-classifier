@@ -51,13 +51,23 @@
                                 </div>
 
                                 <!-- Video List -->
-                                <p class="text-caption font-weight-bold">Videos</p>
+                                <div class="d-flex align-center justify-space-between mb-2">
+                                </div>
+                                <v-toolbar density="compact">
+                                    <v-toolbar-title>Videos</v-toolbar-title>
+                                    <v-btn 
+                                        icon="mdi-filter-check-outline" 
+                                        title="show processed" 
+                                        @click="hideProcessedVideos = !hideProcessedVideos"
+                                        :class="{ 'opacity-30': hideProcessedVideos }"
+                                    ></v-btn>
+                                </v-toolbar>
                                 <div style="flex: 1; overflow-y: auto;">
                                     <v-list density="compact" 
                                         v-model:selected="selectedVideoFiles"
                                         select-strategy="leaf">
                                         <v-list-item 
-                                            v-for="video in videoFiles" 
+                                            v-for="video in filteredVideoFiles" 
                                             :key="video"
                                             :value="video"
                                             :title="video"

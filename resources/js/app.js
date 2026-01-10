@@ -130,6 +130,38 @@ const app = createApp({
                         this.assignLabel(this.datasetLabels[index].id);
                     }
                 }
+                // arrow keys to move selection
+                else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (this.imageFiles.length === 0) return;
+
+                    let newIndex = this.lastSelectedIndex || 0;
+                    let numColumns = window.getComputedStyle(this.$refs.imageGallery)?.getPropertyValue('grid-template-columns')?.split(' ')?.length || 1;
+
+                    if (e.key === 'ArrowRight') {
+                        newIndex++;
+                    } else if (e.key === 'ArrowLeft') {
+                        newIndex--;
+                    } else if (e.key === 'ArrowUp') {
+                        newIndex -= numColumns;
+                    } else if (e.key === 'ArrowDown') {
+                        newIndex += numColumns;
+                    }
+
+                    if (newIndex < 0) newIndex = 0;
+                    if (newIndex >= this.imageFiles.length) newIndex = this.imageFiles.length - 1;
+
+                    const image = this.imageFiles[newIndex];
+                    this.handleImageSelect(image, e);
+
+                    // scroll into view
+                    this.$nextTick(() => {
+                        const imgElement = this.$refs.imageGallery.querySelectorAll('.gallery-item')[newIndex];
+                        if (imgElement) {
+                            imgElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
+                    });
+                }
             });
         },
 
@@ -213,8 +245,14 @@ const app = createApp({
                     .sort();
 
                 this.stats.imageCount = this.imageFiles.length;
-                this.selectedImages = [];
-                this.stats.selectedImages = 0;
+                if (this.imageFiles.length > 0) {
+                    this.selectedImages = [this.imageFiles[0]];
+                    this.lastSelectedIndex = 0;
+                } else {
+                    this.selectedImages = [];
+                    this.lastSelectedIndex = null;
+                }
+                this.stats.selectedImages = this.selectedImages.length;
             } catch (error) {
                 this.showMessage('Error loading images: ' + error.message, 'error');
             }

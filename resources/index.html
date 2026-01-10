@@ -123,7 +123,7 @@
                                     <p class="text-caption text-disabled">No images in process queue</p>
                                 </div>
                                 <div v-else style="flex: 1; overflow-y: auto;">
-                                    <div class="image-gallery" :style="{ '--preview-size': previewSize + 'px' }">
+                                    <div ref="imageGallery" class="image-gallery" :style="{ '--preview-size': previewSize + 'px' }">
                                         <div 
                                             v-for="image in imageFiles"
                                             :key="image"

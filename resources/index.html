@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Video Classification Tool</title>
+    <link rel="icon" type="image/svg+xml" href="/icons/appIcon.png">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/vuetify@3/dist/vuetify.min.css" rel="stylesheet">
+    <link href="/styles.css" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <v-app>
+            <v-app-bar app color="primary" dark>
+                <v-toolbar-title>ML Video Classification Tool</v-toolbar-title>
+                <v-spacer></v-spacer>
+                <span class="caption" v-if="stats">
+                    Videos: {{ stats.videoCount }} | Images: {{ stats.imageCount }} | Selected: {{ stats.selectedImages }}
+                </span>
+            </v-app-bar>
+
+            <v-main>
+                <v-container fluid class="pa-0" style="height: calc(100vh - 64px); display: flex;">
+                    <!-- Left Column: Video Selection -->
+                    <div class="column-left">
+                        <v-card class="ma-2 h-100" style="display: flex; flex-direction: column;">
+                            <v-card-title>Video Selection</v-card-title>
+                            <v-card-text style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                                <div class="mb-3">
+                                    <v-btn block color="primary" @click="selectVideoFolder" class="mb-2">
+                                        <v-icon small class="mr-2">mdi-folder-open</v-icon>
+                                        Choose Video Folder
+                                    </v-btn>
+                                    <div v-if="selectedVideoFolder" class="text-caption text-truncate pa-2 bg-grey-lighten-3 rounded">
+                                        {{ selectedVideoFolder }}
+                                    </div>
+                                </div>
+
+                                <!-- Video Player -->
+                                <div v-if="currentVideo" class="mb-3">
+                                    <p class="text-caption font-weight-bold">Preview</p>
+                                    <video 
+                                        :src="currentVideoUrl" 
+                                        width="100%" 
+                                        height="120" 
+                                        controls
+                                        style="background: #000; border-radius: 4px;">
+                                    </video>
+                                </div>
+
+                                <!-- Video List -->
+                                <div style="flex: 1; overflow-y: auto;">
+                                    <p class="text-caption font-weight-bold">Videos</p>
+                                    <v-list density="compact" style="max-height: 100%; overflow-y: auto;" 
+                                        v-model:selected="selectedVideoFiles"
+                                        select-strategy="leaf">
+                                        <v-list-item 
+                                            v-for="video in videoFiles" 
+                                            :key="video"
+                                            :value="video"
+                                            :title="video"
+                                            @click="selectVideo(video)"
+                                            :class="{ 'v-item--active': currentVideo === video,
+                                                      'processed': processedVideoFiles.has(video) }"
+                                            class="video-list-item">
+                                            <template v-slot:prepend="{ isSelected, select }">
+                                                <v-list-item-action start>
+                                                    <v-checkbox-btn :model-value="isSelected" @update:model-value="select"></v-checkbox-btn>
+                                                </v-list-item-action>
+                                            </template>
+                                        </v-list-item>
+                                    </v-list>
+                                </div>
+
+                                <!-- Preprocessing Controls -->
+                                <div class="mt-3 pt-3 border-top">
+                                    <p class="text-caption font-weight-bold">Output Folder</p>
+                                    <v-btn block color="primary" @click="selectOutputFolder" class="mb-2">
+                                        <v-icon small class="mr-2">mdi-folder-open</v-icon>
+                                        Choose Output Folder
+                                    </v-btn>
+                                    <div v-if="outputFolder" class="text-caption text-truncate pa-2 bg-grey-lighten-3 rounded mb-3">
+                                        {{ outputFolder }}
+                                    </div>
+
+                                    <v-btn 
+                                        block 
+                                        color="success"
+                                        :disabled="!selectedVideoFolder || !outputFolder || videoFiles.length === 0"
+                                        @click="extractFramesFromVideos"
+                                        :loading="isPreprocessing">
+                                        <v-icon small class="mr-2">mdi-play</v-icon>
+                                        Preprocess Videos
+                                    </v-btn>
+                                </div>
+                            </v-card-text>
+                        </v-card>
+                    </div>
+
+                    <!-- Center Column: Image Gallery -->
+                    <div class="column-center">
+                        <v-card class="ma-2 h-100" style="display: flex; flex-direction: column;">
+                            <v-card-title>
+                                Image Gallery (Todo Queue)
+                                <v-spacer></v-spacer>
+                                <div class="d-flex align-center gap-2">
+                                    <span class="text-caption">Size:</span>
+                                    <v-slider
+                                        v-model="previewSize"
+                                        min="64"
+                                        max="256"
+                                        step="16"
+                                        class="ma-0"
+                                        style="max-width: 100px;">
+                                    </v-slider>
+                                    <span class="text-caption">{{ previewSize }}px</span>
+                                </div>
+                            </v-card-title>
+                            <v-card-text style="flex: 1; overflow: hidden; display: flex; flex-direction: column;">
+                                <div v-if="imageFiles.length === 0" class="flex-center">
+                                    <p class="text-caption text-disabled">No images in process queue</p>
+                                </div>
+                                <div v-else style="flex: 1; overflow-y: auto;">
+                                    <div class="image-gallery" :style="{ '--preview-size': previewSize + 'px' }">
+                                        <div 
+                                            v-for="image in imageFiles"
+                                            :key="image"
+                                            class="gallery-item"
+                                            :class="{ 'selected': selectedImages.includes(image) }"
+                                            @click="handleImageSelect(image, $event)"
+                                            @contextmenu.prevent="handleImageSelect(image, { ctrlKey: true, shiftKey: false })"
+                                            draggable="true">
+                                            <img 
+                                                :src="getImageUrl(image)"
+                                                :alt="image"
+                                                :width="previewSize"
+                                                :height="previewSize">
+                                            <div class="image-name">{{ image }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </v-card-text>
+                        </v-card>
+                    </div>
+
+                    <!-- Right Column: Label Assignment -->
+                    <div class="column-right">
+                        <v-card class="ma-2 h-100" style="display: flex; flex-direction: column;">
+                            <v-card-title>Label Assignment</v-card-title>
+                            <v-card-text style="flex: 1; display: flex; flex-direction: column; overflow-y: auto;">
+                                <!-- Dataset Info -->
+                                <div v-if="datasetLabels.length > 0" class="mb-4 pb-4 border-bottom">
+                                    <p class="text-caption font-weight-bold">Dataset Info</p>
+                                    <div class="text-caption">
+                                        <p class="ma-0">Found {{ datasetLabels.length }} labels</p>
+                                        <p class="ma-0 text-disabled">From dataset.yaml</p>
+                                    </div>
+                                </div>
+
+                                <!-- Label Buttons -->
+                                <div v-if="datasetLabels.length > 0">
+                                    <p class="text-caption font-weight-bold mb-2">Assign Label</p>
+                                    <div class="d-flex flex-column gap-2">
+                                        <v-btn
+                                            v-for="(label, index) in datasetLabels"
+                                            :key="label.id"
+                                            block
+                                            color="info"
+                                            :disabled="selectedImages.length === 0"
+                                            @click="assignLabel(label.id)"
+                                            class="label-button">
+                                            <span class="text-caption">
+                                                {{ label.name }}
+                                            </span>
+                                            <v-spacer></v-spacer>
+                                            <span class="text-caption font-weight-bold">
+                                                {{ getKeyboardShortcut(index) }}
+                                            </span>
+                                        </v-btn>
+                                    </div>
+                                </div>
+
+                                <div v-else class="flex-center mt-4">
+                                    <p class="text-caption text-disabled">Select output folder with dataset.yaml</p>
+                                </div>
+                            </v-card-text>
+                        </v-card>
+                    </div>
+                </v-container>
+            </v-main>
+
+            <!-- Snackbar for notifications -->
+            <v-snackbar
+                v-model="snackbar.visible"
+                :timeout="snackbar.timeout"
+                :color="snackbar.color">
+                {{ snackbar.message }}
+            </v-snackbar>
+        </v-app>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vuetify@3/dist/vuetify.min.js"></script>
+    <script src="/js/neutralino.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>

@@ -86,7 +86,7 @@ html, body {
 }
 
 .video-list-item.processed .v-list-item-title {
-    text-decoration: line-through green;
+    opacity: 0.3;
 }
 
 /* Image Gallery Styling */

@@ -13,6 +13,31 @@
 <body>
     <div id="app">
         <v-app>
+            <v-dialog v-model="isLabelEditorOpen" max-width="500px">
+                <v-card>
+                    <v-card-title>Edit Dataset Labels</v-card-title>
+                    <v-card-text>
+                        <v-text-field
+                            v-for="(label, index) in datasetLabels"
+                            :key="index"
+                            v-model="datasetLabels[index]"
+                            class="mb-2"
+                            density="compact"
+                            variant="solo"
+                        >
+                            <template v-slot:append>
+                                <v-btn icon="mdi-delete" color="red" @click="removeLabel(index)" :disabled="datasetLabels.length <= 1" title="Remove Label"></v-btn>
+                            </template>
+                        </v-text-field>
+                        <v-btn color="primary" @click="addNewLabel">Add Label</v-btn>
+                    </v-card-text>
+                    <v-card-actions>
+                        <v-spacer></v-spacer>
+                        <v-btn text @click="isLabelEditorOpen = false">Close</v-btn>
+                    </v-card-actions>
+                </v-card>
+            </v-dialog>
+
             <v-app-bar app color="primary" dark>
                 <v-toolbar-title>ML Video Classification Tool</v-toolbar-title>
                 <v-spacer></v-spacer>
@@ -112,25 +137,23 @@
                     <!-- Center Column: Image Gallery -->
                     <div class="column-center">
                         <v-card class="ma-2 h-100" style="display: flex; flex-direction: column;">
-                            <v-card-title>
-                                <v-toolbar density="compact">
-                                    <v-toolbar-title>Image Gallery (Todo Queue)</v-toolbar-title>
-                                    <v-slider
-                                        v-model="previewSize"
-                                        label="Image Size"
-                                        min="128"
-                                        max="512"
-                                        step="16"
-                                        style="max-width: 250px"
-                                        class="align-center"
-                                        hide-details>
-                                        <template v-slot:append>
-                                            <span v-text="previewSize + 'px'"></span>
-                                        </template>
-                                    </v-slider>
-                                    <v-btn icon="mdi-reload" @click="loadImageFiles"></v-btn>
-                                </v-toolbar>
-                            </v-card-title>
+                            <v-toolbar density="compact">
+                                <v-toolbar-title>Image Gallery (Todo Queue)</v-toolbar-title>
+                                <v-slider
+                                    v-model="previewSize"
+                                    label="Image Size"
+                                    min="128"
+                                    max="512"
+                                    step="16"
+                                    style="max-width: 250px"
+                                    class="align-center"
+                                    hide-details>
+                                    <template v-slot:append>
+                                        <span v-text="previewSize + 'px'"></span>
+                                    </template>
+                                </v-slider>
+                                <v-btn icon="mdi-reload" @click="loadImageFiles" title="Reload Images"></v-btn>
+                            </v-toolbar>
                             <v-card-text style="flex: 1; overflow: hidden; display: flex; flex-direction: column;">
                                 <div v-if="imageFiles.length === 0" class="flex-center">
                                     <p class="text-caption text-disabled">No images to process</p>
@@ -161,16 +184,11 @@
                     <!-- Right Column: Label Assignment -->
                     <div class="column-right">
                         <v-card class="ma-2 h-100" style="display: flex; flex-direction: column;">
-                            <v-card-title>Label Assignment</v-card-title>
+                            <v-toolbar density="compact">
+                                <v-toolbar-title>Label Assignment</v-toolbar-title>
+                                <v-btn icon="mdi-playlist-edit" @click="isLabelEditorOpen = true" title="Edit Labels"></v-btn>
+                            </v-toolbar>
                             <v-card-text style="flex: 1; display: flex; flex-direction: column; overflow-y: auto;">
-                                <!-- Dataset Info -->
-                                <div v-if="datasetLabels.length > 0" class="mb-4 pb-4 border-bottom">
-                                    <p class="text-caption font-weight-bold">Dataset Info</p>
-                                    <div class="text-caption">
-                                        <p class="ma-0">Found {{ datasetLabels.length }} labels</p>
-                                        <p class="ma-0 text-disabled">From dataset.yaml</p>
-                                    </div>
-                                </div>
 
                                 <!-- Label Buttons -->
                                 <div v-if="datasetLabels.length > 0">
@@ -178,19 +196,17 @@
                                     <div class="d-flex flex-column gap-2">
                                         <v-btn
                                             v-for="(label, index) in datasetLabels"
-                                            :key="label.id"
+                                            :key="index"
                                             block
                                             color="info"
                                             :disabled="selectedImages.length === 0"
-                                            @click="assignLabel(label.id)"
-                                            class="label-button">
-                                            <span class="text-caption">
-                                                {{ label.name }}
-                                            </span>
-                                            <v-spacer></v-spacer>
-                                            <span class="text-caption font-weight-bold">
-                                                {{ getKeyboardShortcut(index) }}
-                                            </span>
+                                            @click="assignLabel(index)"
+                                            class="label-button"
+                                            :text="label"
+                                            >
+                                            <template v-slot:append>
+                                                <v-hotkey variant="plain" :keys="getKeyboardShortcut(index)"></v-hotkey>
+                                            </template>
                                         </v-btn>
                                     </div>
                                 </div>

@@ -27,6 +27,7 @@ const app = createApp({
             // Right Column - Label Assignment
             datasetLabels: [],
             datasetPath: null,
+            isLabelEditorOpen: false,
 
             // UI State
             snackbar: {
@@ -60,6 +61,14 @@ const app = createApp({
                 return this.videoFiles.filter(video => !this.processedVideoFiles.has(video));
             }
             return this.videoFiles;
+        }
+    },
+    watch: {
+        isLabelEditorOpen(newVal, oldVal) {
+            // When closing the label editor, write changes to dataset.yaml
+            if (newVal == false && oldVal == true) {
+                this.writeDatasetYaml();
+            }
         }
     },
     mounted() {
@@ -134,7 +143,7 @@ const app = createApp({
                     e.preventDefault();
                     const index = parseInt(e.key);
                     if (index < this.datasetLabels.length && this.selectedImages.length > 0) {
-                        this.assignLabel(this.datasetLabels[index].id);
+                        this.assignLabel(index);
                     }
                 }
                 // arrow keys to move selection
@@ -293,24 +302,40 @@ const app = createApp({
                 }
 
                 const namesSection = namesMatch[1];
-                const labels = [];
 
                 // Extract id: name pairs
                 const lines = namesSection.split('\n');
                 for (const line of lines) {
                     const match = line.match(/^\s*(\d+):\s*(.+)$/);
                     if (match) {
-                        labels.push({
-                            id: parseInt(match[1]),
-                            name: match[2].trim()
-                        });
+                        this.datasetLabels.push(match[2].trim());
                     }
                 }
-
-                this.datasetLabels = labels.sort((a, b) => a.id - b.id);
             } catch (error) {
                 this.showMessage('Error parsing dataset.yaml: ' + error.message, 'error');
             }
+        },
+
+        async writeDatasetYaml() {
+            try {
+                if (!this.outputFolder) return;
+                const datasetPath = this.outputFolder + '/dataset.yaml';
+                let content = 'names:\n';
+                for (const [index, label] of this.datasetLabels.entries()) {
+                    content += `  ${index}: ${label}\n`;
+                }
+                await Neutralino.filesystem.writeFile(datasetPath, content);
+            } catch (error) {
+                this.showMessage('Error writing dataset.yaml: ' + error.message, 'error');
+            }
+        },
+
+        addNewLabel() {
+            this.datasetLabels.push('new_label');
+        },
+
+        removeLabel(index) {
+            this.datasetLabels.splice(index, 1);
         },
 
         async loadProcessedVideoList() {
@@ -423,17 +448,21 @@ const app = createApp({
         },
 
         /* ===== Label Assignment ===== */
-        async assignLabel(labelId) {
+        async assignLabel(labelIndex) {
             try {
                 if (!this.outputFolder || this.selectedImages.length === 0) {
                     this.showMessage('Select output folder and images', 'warning');
                     return;
                 }
 
-                const label = this.datasetLabels.find(l => l.id === labelId);
-                if (!label) return;
+                if (labelIndex < 0 || labelIndex >= this.datasetLabels.length) {
+                    this.showMessage('Invalid label index', 'warning');
+                    return;
+                }
 
-                const labelFolder = this.outputFolder + '/' + label.name;
+                const label = this.datasetLabels[labelIndex];
+
+                const labelFolder = this.outputFolder + '/' + label;
 
                 // Create label folder if it doesn't exist
                 try {
@@ -457,7 +486,7 @@ const app = createApp({
                 // Reload images
                 this.selectedImages = [];
                 await this.loadImageFiles();
-                this.showMessage(`Moved ${movedCount} image(s) to ${label.name}`, 'success');
+                this.showMessage(`Moved ${movedCount} image(s) to ${label}`, 'success');
             } catch (error) {
                 this.showMessage('Error assigning label: ' + error.message, 'error');
             }

@@ -28,6 +28,7 @@ const app = createApp({
             datasetLabels: [],
             datasetPath: null,
             isLabelEditorOpen: false,
+            lastMoved: [], // for undo functionality
 
             // UI State
             snackbar: {
@@ -177,6 +178,10 @@ const app = createApp({
                             imgElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                         }
                     });
+                }
+                else if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    this.undoLastMove();
                 }
             });
         },
@@ -472,12 +477,14 @@ const app = createApp({
                 }
 
                 let movedCount = 0;
+                this.lastMoved = [];
                 for (const image of this.selectedImages) {
                     try {
                         const sourcePath = this.imageQueueFolder + '/' + image;
                         const destPath = labelFolder + '/' + image;
                         await Neutralino.filesystem.move(sourcePath, destPath);
                         movedCount++;
+                        this.lastMoved.push({from: sourcePath, to: destPath});
                     } catch (error) {
                         this.showMessage(`Error moving ${image}: ` + error.message, 'warning');
                     }
@@ -489,6 +496,22 @@ const app = createApp({
                 this.showMessage(`Moved ${movedCount} image(s) to ${label}`, 'success');
             } catch (error) {
                 this.showMessage('Error assigning label: ' + error.message, 'error');
+            }
+        },
+
+        async undoLastMove() {
+            try {
+                if (this.lastMoved.length === 0) {
+                    this.showMessage('No moves to undo', 'info');
+                    return;
+                }
+                while (this.lastMoved.length > 0) {
+                    const moved = this.lastMoved.pop();
+                    await Neutralino.filesystem.move(moved.to, moved.from);
+                }
+                await this.loadImageFiles();
+            } catch (error) {
+                this.showMessage('Error undoing move: ' + error.message, 'error');
             }
         },
 

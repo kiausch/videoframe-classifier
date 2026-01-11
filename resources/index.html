@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +11,7 @@
     <link href="https://cdn.jsdelivr.net/npm/vuetify@3/dist/vuetify.min.css" rel="stylesheet">
     <link href="/styles.css" rel="stylesheet">
 </head>
+
 <body>
     <div id="app">
         <v-app>
@@ -17,16 +19,11 @@
                 <v-card>
                     <v-card-title>Edit Dataset Labels</v-card-title>
                     <v-card-text>
-                        <v-text-field
-                            v-for="(label, index) in datasetLabels"
-                            :key="index"
-                            v-model="datasetLabels[index]"
-                            class="mb-2"
-                            density="compact"
-                            variant="solo"
-                        >
+                        <v-text-field v-for="(label, index) in datasetLabels" :key="index"
+                            v-model="datasetLabels[index]" class="mb-2" density="compact" variant="solo">
                             <template v-slot:append>
-                                <v-btn icon="mdi-delete" color="red" @click="removeLabel(index)" :disabled="datasetLabels.length <= 1" title="Remove Label"></v-btn>
+                                <v-btn icon="mdi-delete" color="red" @click="removeLabel(index)"
+                                    :disabled="datasetLabels.length <= 1" title="Remove Label"></v-btn>
                             </template>
                         </v-text-field>
                         <v-btn color="primary" @click="addNewLabel">Add Label</v-btn>
@@ -38,193 +35,163 @@
                 </v-card>
             </v-dialog>
 
-            <v-app-bar app color="primary" dark>
-                <v-toolbar-title>ML Video Classification Tool</v-toolbar-title>
-                <v-spacer></v-spacer>
-                <span class="caption" v-if="stats">
-                    Videos: {{ stats.videoCount }} | Images: {{ stats.imageCount }} | Selected: {{ stats.selectedImages }}
-                </span>
+            <v-app-bar color="primary" density="comfortable">
+                <v-app-bar-title>ML Video Classification Tool</v-app-bar-title>
+                <template v-slot:append>
+                    <span v-if="stats">
+                        Videos: {{ stats.videoCount }} | Images: {{ stats.imageCount }} | Selected: {{ stats.selectedImages }}
+                    </span>
+                </template>
             </v-app-bar>
 
+            <!-- Left Column: Video Selection -->
+            <v-navigation-drawer width="350">
+                <v-container class="d-flex flex-column h-100 pa-2">
+                    <v-card class="flex-0-0 mb-2">
+                        <v-card-text>
+                            <!-- Video Folder Selection -->
+                            <v-text-field
+                                label="Choose Video Folder"
+                                :model-value="selectedVideoFolder"
+                                :title="selectedVideoFolder"
+                                append-inner-icon="mdi-folder-open"
+                                @click:append-inner="selectVideoFolder"
+                                variant="outlined"
+                                readonly
+                            ></v-text-field>
+
+                            <v-text-field
+                                label="Choose Output Folder"
+                                :model-value="outputFolder"
+                                :title="outputFolder"
+                                append-inner-icon="mdi-folder-open"
+                                @click:append-inner="selectOutputFolder"
+                                variant="outlined"
+                                readonly
+                            ></v-text-field>
+                        </v-card-text>
+                    </v-card>
+
+                    <!-- Video Player -->
+                    <v-card v-if="currentVideo" class="flex-0-0 mb-3">
+                        <v-card-title>Preview</v-card-title>
+                        <v-card-text>
+                            <video :src="currentVideoUrl" width="100%" height="120" controls
+                                style="background: #000; border-radius: 4px;">
+                            </video>
+                        </v-card-text>
+                    </v-card>
+
+                    <!-- Video List -->
+                    <v-card class="flex-1-1 overflow-auto">
+                        <v-toolbar density="compact">
+                            <v-toolbar-title>Select Videos</v-toolbar-title>
+                            <v-btn icon="mdi-filter-check-outline" title="show processed"
+                                @click="hideProcessedVideos = !hideProcessedVideos"
+                                :class="{ 'opacity-30': hideProcessedVideos }"></v-btn>
+                        </v-toolbar>
+                        <v-list density="compact" v-model:selected="selectedVideoFiles" select-strategy="leaf">
+                            <v-list-item v-for="video in filteredVideoFiles" :key="video" :value="video"
+                                :title="video" @click="selectVideo(video)" :class="{ 'v-item--active': currentVideo === video,
+                                                'processed': processedVideoFiles.has(video) }"
+                                class="video-list-item">
+                                <template v-slot:prepend="{ isSelected, select }">
+                                    <v-list-item-action start>
+                                        <v-checkbox-btn :model-value="isSelected"
+                                            @update:model-value="select"></v-checkbox-btn>
+                                    </v-list-item-action>
+                                </template>
+                            </v-list-item>
+                        </v-list>
+                    </v-card>
+
+                    <!-- frame processing controls -->
+                    <v-card class="flex-0-0">
+                        <v-card-text>
+                            <v-btn block color="success"
+                                :disabled="!selectedVideoFolder || !outputFolder || videoFiles.length === 0"
+                                :loading="isPreprocessing"
+                                @click="extractFramesFromVideos"
+                                prepend-icon="mdi-play"
+                                title="Extract images from selected videos at the configured frame rate">
+                                Extract Images
+                            </v-btn>
+                        </v-card-text>
+                    </v-card>
+                </v-container>
+            </v-navigation-drawer>
+
             <v-main>
-                <v-container fluid class="pa-0" style="height: calc(100vh - 64px); display: flex;">
-                    <!-- Left Column: Video Selection -->
-                    <div class="column-left">
-                        <v-card class="ma-2 h-100" style="display: flex; flex-direction: column;">
-                            <v-card-title>Video Selection</v-card-title>
-                            <v-card-text style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-                                <div class="mb-3">
-                                    <v-btn block color="primary" @click="selectVideoFolder" class="mb-2">
-                                        <v-icon small class="mr-2">mdi-folder-open</v-icon>
-                                        Choose Video Folder
-                                    </v-btn>
-                                    <div v-if="selectedVideoFolder" class="text-caption text-truncate pa-2 bg-grey-lighten-3 rounded">
-                                        {{ selectedVideoFolder }}
+                <!-- Center Column: Image Gallery -->
+                <v-container class="d-flex flex-column pa-2">
+                    <v-card>
+                        <v-toolbar density="compact">
+                            <v-toolbar-title>Images to Classify</v-toolbar-title>
+                            <v-slider v-model="previewSize" label="Image Size" min="128" max="512" step="16"
+                                style="max-width: 250px" class="align-center" hide-details>
+                                <template v-slot:append>
+                                    <span v-text="previewSize + 'px'"></span>
+                                </template>
+                            </v-slider>
+                            <v-btn icon="mdi-reload" @click="loadImageFiles" title="Reload Images"></v-btn>
+                        </v-toolbar>
+                        <v-card-text>
+                            <div v-if="imageFiles.length === 0" class="flex-center">
+                                <p class="text-caption text-disabled">No images to process</p>
+                            </div>
+                            <div v-else style="flex: 1; overflow-y: auto;">
+                                <div ref="imageGallery" class="image-gallery"
+                                    :style="{ '--preview-size': previewSize + 'px' }">
+                                    <div v-for="image in imageFiles" :key="image" class="gallery-item"
+                                        :class="{ 'selected': selectedImages.includes(image) }"
+                                        @click="handleImageSelect(image, $event)"
+                                        @contextmenu.prevent="handleImageSelect(image, { ctrlKey: true, shiftKey: false })"
+                                        draggable="true">
+                                        <img :src="getImageUrl(image)" :alt="image" :width="previewSize"
+                                            :height="previewSize">
+                                        <div class="image-name">{{ image }}</div>
                                     </div>
                                 </div>
-
-                                <!-- Video Player -->
-                                <div v-if="currentVideo" class="mb-3">
-                                    <p class="text-caption font-weight-bold">Preview</p>
-                                    <video 
-                                        :src="currentVideoUrl" 
-                                        width="100%" 
-                                        height="120" 
-                                        controls
-                                        style="background: #000; border-radius: 4px;">
-                                    </video>
-                                </div>
-
-                                <!-- Video List -->
-                                <div class="d-flex align-center justify-space-between mb-2">
-                                </div>
-                                <v-toolbar density="compact">
-                                    <v-toolbar-title>Videos</v-toolbar-title>
-                                    <v-btn 
-                                        icon="mdi-filter-check-outline" 
-                                        title="show processed" 
-                                        @click="hideProcessedVideos = !hideProcessedVideos"
-                                        :class="{ 'opacity-30': hideProcessedVideos }"
-                                    ></v-btn>
-                                </v-toolbar>
-                                <div style="flex: 1; overflow-y: auto;">
-                                    <v-list density="compact" 
-                                        v-model:selected="selectedVideoFiles"
-                                        select-strategy="leaf">
-                                        <v-list-item 
-                                            v-for="video in filteredVideoFiles" 
-                                            :key="video"
-                                            :value="video"
-                                            :title="video"
-                                            @click="selectVideo(video)"
-                                            :class="{ 'v-item--active': currentVideo === video,
-                                                      'processed': processedVideoFiles.has(video) }"
-                                            class="video-list-item">
-                                            <template v-slot:prepend="{ isSelected, select }">
-                                                <v-list-item-action start>
-                                                    <v-checkbox-btn :model-value="isSelected" @update:model-value="select"></v-checkbox-btn>
-                                                </v-list-item-action>
-                                            </template>
-                                        </v-list-item>
-                                    </v-list>
-                                </div>
-
-                                <!-- Preprocessing Controls -->
-                                <div class="mt-3 pt-3 border-top">
-                                    <p class="text-caption font-weight-bold">Output Folder</p>
-                                    <v-btn block color="primary" @click="selectOutputFolder" class="mb-2">
-                                        <v-icon small class="mr-2">mdi-folder-open</v-icon>
-                                        Choose Output Folder
-                                    </v-btn>
-                                    <div v-if="outputFolder" class="text-caption text-truncate pa-2 bg-grey-lighten-3 rounded mb-3">
-                                        {{ outputFolder }}
-                                    </div>
-
-                                    <v-btn 
-                                        block 
-                                        color="success"
-                                        :disabled="!selectedVideoFolder || !outputFolder || videoFiles.length === 0"
-                                        @click="extractFramesFromVideos"
-                                        :loading="isPreprocessing">
-                                        <v-icon small class="mr-2">mdi-play</v-icon>
-                                        Preprocess Videos
-                                    </v-btn>
-                                </div>
-                            </v-card-text>
-                        </v-card>
-                    </div>
-
-                    <!-- Center Column: Image Gallery -->
-                    <div class="column-center">
-                        <v-card class="ma-2 h-100" style="display: flex; flex-direction: column;">
-                            <v-toolbar density="compact">
-                                <v-toolbar-title>Image Gallery (Todo Queue)</v-toolbar-title>
-                                <v-slider
-                                    v-model="previewSize"
-                                    label="Image Size"
-                                    min="128"
-                                    max="512"
-                                    step="16"
-                                    style="max-width: 250px"
-                                    class="align-center"
-                                    hide-details>
-                                    <template v-slot:append>
-                                        <span v-text="previewSize + 'px'"></span>
-                                    </template>
-                                </v-slider>
-                                <v-btn icon="mdi-reload" @click="loadImageFiles" title="Reload Images"></v-btn>
-                            </v-toolbar>
-                            <v-card-text style="flex: 1; overflow: hidden; display: flex; flex-direction: column;">
-                                <div v-if="imageFiles.length === 0" class="flex-center">
-                                    <p class="text-caption text-disabled">No images to process</p>
-                                </div>
-                                <div v-else style="flex: 1; overflow-y: auto;">
-                                    <div ref="imageGallery" class="image-gallery" :style="{ '--preview-size': previewSize + 'px' }">
-                                        <div 
-                                            v-for="image in imageFiles"
-                                            :key="image"
-                                            class="gallery-item"
-                                            :class="{ 'selected': selectedImages.includes(image) }"
-                                            @click="handleImageSelect(image, $event)"
-                                            @contextmenu.prevent="handleImageSelect(image, { ctrlKey: true, shiftKey: false })"
-                                            draggable="true">
-                                            <img 
-                                                :src="getImageUrl(image)"
-                                                :alt="image"
-                                                :width="previewSize"
-                                                :height="previewSize">
-                                            <div class="image-name">{{ image }}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </v-card-text>
-                        </v-card>
-                    </div>
-
-                    <!-- Right Column: Label Assignment -->
-                    <div class="column-right">
-                        <v-card class="ma-2 h-100" style="display: flex; flex-direction: column;">
-                            <v-toolbar density="compact">
-                                <v-toolbar-title>Label Assignment</v-toolbar-title>
-                                <v-btn icon="mdi-playlist-edit" @click="isLabelEditorOpen = true" title="Edit Labels"></v-btn>
-                            </v-toolbar>
-                            <v-card-text style="flex: 1; display: flex; flex-direction: column; overflow-y: auto;">
-
-                                <!-- Label Buttons -->
-                                <div v-if="datasetLabels.length > 0">
-                                    <p class="text-caption font-weight-bold mb-2">Assign Label</p>
-                                    <div class="d-flex flex-column gap-2">
-                                        <v-btn
-                                            v-for="(label, index) in datasetLabels"
-                                            :key="index"
-                                            block
-                                            color="info"
-                                            :disabled="selectedImages.length === 0"
-                                            @click="assignLabel(index)"
-                                            class="label-button"
-                                            :text="label"
-                                            >
-                                            <template v-slot:append>
-                                                <v-hotkey variant="plain" :keys="getKeyboardShortcut(index)"></v-hotkey>
-                                            </template>
-                                        </v-btn>
-                                    </div>
-                                </div>
-
-                                <div v-else class="flex-center mt-4">
-                                    <p class="text-caption text-disabled">Select output folder with dataset.yaml</p>
-                                </div>
-                            </v-card-text>
-                        </v-card>
-                    </div>
+                            </div>
+                        </v-card-text>
+                    </v-card>
                 </v-container>
             </v-main>
 
+            <!-- Right Column: Label Assignment -->
+            <v-navigation-drawer location="right" width="300">
+                <v-container class="d-flex flex-column h-100 pa-2">
+                    <v-card>
+                        <v-toolbar density="compact">
+                            <v-toolbar-title>Assign Label</v-toolbar-title>
+                            <v-btn icon="mdi-playlist-edit" @click="isLabelEditorOpen = true"
+                                title="Edit Labels"></v-btn>
+                        </v-toolbar>
+                        <v-card-text v-if="datasetLabels.length > 0">
+                            <!-- Label Buttons -->
+                            <v-btn v-for="(label, index) in datasetLabels" :key="index" 
+                                block
+                                color="info"
+                                :disabled="selectedImages.length === 0" 
+                                @click="assignLabel(index)"
+                                :text="label"
+                                class="mb-2"
+                            >
+                                <template v-slot:append>
+                                    <v-hotkey variant="plain" :keys="getKeyboardShortcut(index)"></v-hotkey>
+                                </template>
+                            </v-btn>
+                        </v-card-text>
+
+                        <v-card-text v-else class="flex-center mt-4">
+                            <p class="text-caption text-disabled">Select output folder</p>
+                        </v-card-text>
+                    </v-card>
+                </v-container>
+            </v-navigation-drawer>
+
             <!-- Snackbar for notifications -->
-            <v-snackbar
-                v-model="snackbar.visible"
-                :timeout="snackbar.timeout"
-                :color="snackbar.color">
+            <v-snackbar v-model="snackbar.visible" :timeout="snackbar.timeout" :color="snackbar.color">
                 {{ snackbar.message }}
             </v-snackbar>
         </v-app>
@@ -235,4 +202,5 @@
     <script src="/js/neutralino.js"></script>
     <script src="/js/app.js"></script>
 </body>
+
 </html>

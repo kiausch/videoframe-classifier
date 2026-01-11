@@ -113,24 +113,27 @@
                     <div class="column-center">
                         <v-card class="ma-2 h-100" style="display: flex; flex-direction: column;">
                             <v-card-title>
-                                Image Gallery (Todo Queue)
-                                <v-spacer></v-spacer>
-                                <div class="d-flex align-center gap-2">
-                                    <span class="text-caption">Size:</span>
+                                <v-toolbar density="compact">
+                                    <v-toolbar-title>Image Gallery (Todo Queue)</v-toolbar-title>
                                     <v-slider
                                         v-model="previewSize"
+                                        label="Image Size"
                                         min="128"
                                         max="512"
                                         step="16"
-                                        class="ma-0"
-                                        style="max-width: 100px;">
+                                        style="max-width: 250px"
+                                        class="align-center"
+                                        hide-details>
+                                        <template v-slot:append>
+                                            <span v-text="previewSize + 'px'"></span>
+                                        </template>
                                     </v-slider>
-                                    <span class="text-caption">{{ previewSize }}px</span>
-                                </div>
+                                    <v-btn icon="mdi-reload" @click="loadImageFiles"></v-btn>
+                                </v-toolbar>
                             </v-card-title>
                             <v-card-text style="flex: 1; overflow: hidden; display: flex; flex-direction: column;">
                                 <div v-if="imageFiles.length === 0" class="flex-center">
-                                    <p class="text-caption text-disabled">No images in process queue</p>
+                                    <p class="text-caption text-disabled">No images to process</p>
                                 </div>
                                 <div v-else style="flex: 1; overflow-y: auto;">
                                     <div ref="imageGallery" class="image-gallery" :style="{ '--preview-size': previewSize + 'px' }">

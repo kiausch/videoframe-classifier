@@ -184,6 +184,12 @@ const app = createApp({
                     e.preventDefault();
                     this.undoLastMove();
                 }
+                else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    this.currentVideo = null;
+                    this.currentVideoUrl = null;
+                    this.initImageSelection();
+                }
             });
         },
 
@@ -267,17 +273,22 @@ const app = createApp({
                     .sort();
 
                 this.stats.imageCount = this.imageFiles.length;
-                if (this.imageFiles.length > 0) {
-                    this.selectedImages = [this.imageFiles[0]];
-                    this.lastSelectedIndex = 0;
-                } else {
-                    this.selectedImages = [];
-                    this.lastSelectedIndex = null;
-                }
-                this.stats.selectedImages = this.selectedImages.length;
+                this.initImageSelection();
+
             } catch (error) {
                 this.showMessage('Error loading images: ' + error.message, 'error');
             }
+        },
+
+        initImageSelection() {
+            if (this.imageFiles.length > 0) {
+                this.selectedImages = [this.imageFiles[0]];
+                this.lastSelectedIndex = 0;
+            } else {
+                this.selectedImages = [];
+                this.lastSelectedIndex = null;
+            }
+            this.stats.selectedImages = this.selectedImages.length;
         },
 
         async loadDatasetLabels() {

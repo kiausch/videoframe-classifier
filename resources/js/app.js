@@ -30,6 +30,8 @@ const app = createApp({
             datasetPath: null,
             isLabelEditorOpen: false,
             lastMoved: [], // for undo functionality
+            labelStatistics: {},
+            trainingSplit: 0.8,
 
             // UI State
             snackbar: {
@@ -106,9 +108,10 @@ const app = createApp({
             }
             try {
                 this.outputFolder = await Neutralino.storage.getData('outputFolder');
-                this.loadImageFiles();
-                this.loadDatasetLabels();
-                this.loadProcessedVideoList();
+                await this.loadImageFiles();
+                await this.loadDatasetLabels();
+                await this.loadProcessedVideoList();
+                await this.updateLabelStatistics();
             }
             catch (error) {
                 this.outputFolder = null;
@@ -218,9 +221,28 @@ const app = createApp({
                     await this.loadProcessedVideoList();
                     this.showMessage('Output folder loaded', 'success');
                     await Neutralino.storage.setData('outputFolder', folder);
+                    await this.updateLabelStatistics();
                 }
             } catch (error) {
                 this.showMessage('Error selecting folder: ' + error.message, 'error');
+            }
+        },
+
+        async updateLabelStatistics() {
+            this.labelStatistics = {};
+            if (!this.outputFolder) return;
+            for (const label of this.datasetLabels) {
+                this.labelStatistics[label] = 0;
+                const labelFolder = this.outputFolder + '/' + label;
+                try {
+                    const stats = await Neutralino.filesystem.getStats(labelFolder);
+                    if (stats.isDirectory) {
+                        const files = await Neutralino.filesystem.readDirectory(labelFolder);
+                        this.labelStatistics[label] = files.filter(file => file.type === 'FILE').length;
+                    }
+                } catch (error) {
+                    // Folder might not exist yet
+                }
             }
         },
 
@@ -503,16 +525,16 @@ const app = createApp({
                         const sourcePath = this.imageQueueFolder + '/' + image;
                         const destPath = labelFolder + '/' + image;
                         await Neutralino.filesystem.move(sourcePath, destPath);
-                        movedCount++;
                         this.lastMoved.push({from: sourcePath, to: destPath});
+                        movedCount++;
+                        this.imageFiles.splice(this.imageFiles.indexOf(image), 1);
                     } catch (error) {
                         this.showMessage(`Error moving ${image}: ` + error.message, 'warning');
                     }
                 }
 
-                // Reload images
                 this.selectedImages = [];
-                await this.loadImageFiles();
+                this.labelStatistics[label] += movedCount;
                 this.showMessage(`Moved ${movedCount} image(s) to ${label}`, 'success');
             } catch (error) {
                 this.showMessage('Error assigning label: ' + error.message, 'error');
@@ -530,8 +552,55 @@ const app = createApp({
                     await Neutralino.filesystem.move(moved.to, moved.from);
                 }
                 await this.loadImageFiles();
+                await this.updateLabelStatistics();
             } catch (error) {
                 this.showMessage('Error undoing move: ' + error.message, 'error');
+            }
+        },
+
+        async createTrainingDataset() {
+            function shuffle(array) {
+                let currentIndex = array.length;
+                while (currentIndex != 0) {
+                    let randomIndex = Math.floor(Math.random() * currentIndex);
+                    currentIndex--;
+                    [array[currentIndex], array[randomIndex]] = [
+                    array[randomIndex], array[currentIndex]];
+                }
+                return array;   // note: the array is shuffled in place, retur for ease of use
+            }
+
+            try {
+                if (!this.outputFolder) {
+                    this.showMessage('Select output folder first', 'warning');
+                    return;
+                }
+                for (const label of this.datasetLabels) {
+                    const labelFolder = this.outputFolder + '/' + label;
+                    const trainFolder = this.outputFolder + '/train/' + label;
+                    const valFolder = this.outputFolder + '/val/' + label;
+                    try {
+                        const stats = await Neutralino.filesystem.getStats(labelFolder);
+                        if (stats.isDirectory) {
+                            const files = await Neutralino.filesystem.readDirectory(labelFolder);
+                            const imageFiles = shuffle(files.filter(file => file.type === 'FILE').map(file => file.entry));
+                            const trainCount = Math.floor(imageFiles.length * this.trainingSplit);
+                            await Neutralino.filesystem.createDirectory(trainFolder).catch(() => {});
+                            await Neutralino.filesystem.createDirectory(valFolder).catch(() => {});
+                            for (let i = 0; i < imageFiles.length; i++) {
+                                const sourcePath = labelFolder + '/' + imageFiles[i];
+                                const destPath = (i < trainCount ? trainFolder : valFolder) + '/' + imageFiles[i];
+                                await Neutralino.filesystem.copy(sourcePath, destPath);
+                            }
+                        }
+                    } catch (error) {
+                        // Folder might not exist yet
+                        this.showMessage('Error creating training dataset: ' + error.message, 'error');
+                    }
+                }
+                this.showMessage('Training dataset created successfully', 'success');
+            } catch (error) {
+                this.showMessage('Error creating training dataset: ' + error.message, 'error');
             }
         },
 

@@ -207,6 +207,47 @@
                             <p class="text-caption text-disabled">Select output folder</p>
                         </v-card-text>
                     </v-card>
+
+                    <v-card class="mt-2">
+                        <v-toolbar density="compact">
+                            <v-toolbar-title>Statistics</v-toolbar-title>
+                            <v-btn icon="mdi-refresh" @click="updateLabelStatistics" title="Refresh Statistics"></v-btn>
+                        </v-toolbar>
+                        <v-card-text>
+                            <v-list density="compact">
+                                <v-list-item v-for="(label, index) in datasetLabels" :key="index">
+                                    <v-list-item-title>
+                                        {{ datasetLabels[index] }}: {{ labelStatistics[label] || 0 }}
+                                    </v-list-item-title>
+                                </v-list-item>
+                            </v-list>
+                        </v-card-text>
+                    </v-card>
+
+                    <v-card class="mt-2">
+                        <v-toolbar density="compact">
+                            <v-toolbar-title>Create Training Dataset</v-toolbar-title>
+                        </v-toolbar>
+                        <v-card-text>
+                            <div class="text-caption">Training Set Percentage</div>
+                            <v-slider v-model="trainingSplit"
+                                min="0.5"
+                                max="0.95"
+                                step="0.01"
+                                class="mb-4"
+                                hide-details>
+                                <template v-slot:append>
+                                    <span v-text="Math.floor(trainingSplit * 100) + '%'"></span>
+                                </template>
+                            </v-slider>
+                            <v-btn color="success"
+                                block
+                                @click="createTrainingDataset"
+                                prepend-icon="mdi-folder-plus"
+                                title="Create Training Dataset">
+                                Create Training Dataset
+                            </v-btn>
+                        </v-card-text>
                 </v-container>
             </v-navigation-drawer>
 

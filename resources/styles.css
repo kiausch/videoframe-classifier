@@ -1,3 +1,7 @@
+.v-btn {
+  text-transform: none !important;
+}
+
 /* Video List Styling */
 .video-list-item {
     cursor: pointer;

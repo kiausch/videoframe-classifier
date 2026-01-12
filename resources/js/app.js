@@ -17,6 +17,7 @@ const app = createApp({
             outputFolder: null,
             isPreprocessing: false,
             hideProcessedVideos: true,
+            imageExtractionFramerate: 1,
 
             // Center Column - Image Gallery
             imageFiles: [],
@@ -428,7 +429,7 @@ const app = createApp({
                         const outputPattern = this.imageQueueFolder + '/' + imageBaseName + '_%05d.jpg';
 
                         // Build FFmpeg command
-                        const command = `ffmpeg -i "${videoPath}" -vf fps=1 "${outputPattern}"`;
+                        const command = `ffmpeg -i "${videoPath}" -vf fps=${this.imageExtractionFramerate} "${outputPattern}"`;
 
                         // Execute preprocessing
                         const result = await Neutralino.os.execCommand(command);

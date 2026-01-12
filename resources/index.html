@@ -83,7 +83,7 @@
                     </v-card>
 
                     <!-- Video List -->
-                    <v-card class="flex-1-1 overflow-auto">
+                    <v-card class="flex-1-1 overflow-auto mb-2">
                         <v-toolbar density="compact">
                             <v-toolbar-title>Select Videos</v-toolbar-title>
                             <v-btn icon="mdi-filter-check-outline" title="show processed"
@@ -108,7 +108,17 @@
                     <!-- frame processing controls -->
                     <v-card class="flex-0-0">
                         <v-card-text>
-                            <v-btn block color="success"
+                            <v-number-input
+                                label="frame rate"
+                                control-variant="stacked"
+                                variant="outlined"
+                                v-model="imageExtractionFramerate"
+                                :min="0"
+                                :max="100"
+                                :precision="1"
+                                ></v-number-input>
+                            <v-btn color="success"
+                                block
                                 :disabled="!selectedVideoFolder || !outputFolder || videoFiles.length === 0"
                                 :loading="isPreprocessing"
                                 @click="extractFramesFromVideos"

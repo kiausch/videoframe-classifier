@@ -90,15 +90,21 @@
                                 @click="hideProcessedVideos = !hideProcessedVideos"
                                 :class="{ 'opacity-30': hideProcessedVideos }"></v-btn>
                         </v-toolbar>
-                        <v-list density="compact" v-model:selected="selectedVideoFiles" select-strategy="leaf">
-                            <v-list-item v-for="video in filteredVideoFiles" :key="video" :value="video"
-                                :title="video" @click="selectVideo(video)" :class="{ 'v-item--active': currentVideo === video,
+                        <v-list density="compact">
+                            <v-list-item v-for="video in filteredVideoFiles" 
+                                :key="video" 
+                                :value="video"
+                                :title="video" 
+                                @click="selectVideo(video)" 
+                                :class="{ 'v-item--active': currentVideo === video,
                                                 'processed': processedVideoFiles.has(video) }"
                                 class="video-list-item">
                                 <template v-slot:prepend="{ isSelected, select }">
                                     <v-list-item-action start>
-                                        <v-checkbox-btn :model-value="isSelected"
-                                            @update:model-value="select"></v-checkbox-btn>
+                                        <v-checkbox-btn 
+                                            :model-value="selectedVideoFiles.includes(video)"
+                                            @update:model-value="toggleSelectedVideo(video)"
+                                            @click.stop></v-checkbox-btn>
                                     </v-list-item-action>
                                 </template>
                             </v-list-item>

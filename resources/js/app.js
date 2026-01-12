@@ -371,6 +371,14 @@ const app = createApp({
             this.currentVideo = videoName;
             this.currentVideoUrl = this.getServerUrl('videos', videoName);
         },
+        toggleSelectedVideo(videoName) {
+            const index = this.selectedVideoFiles.indexOf(videoName);
+            if (index > -1) {
+                this.selectedVideoFiles.splice(index, 1);
+            } else {
+                this.selectedVideoFiles.push(videoName);
+            }
+        },
 
         /* ===== Image Gallery ===== */
         getImageUrl(imageName) {

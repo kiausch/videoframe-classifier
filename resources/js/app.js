@@ -560,14 +560,11 @@ const app = createApp({
 
         async createTrainingDataset() {
             function shuffle(array) {
-                let currentIndex = array.length;
-                while (currentIndex != 0) {
-                    let randomIndex = Math.floor(Math.random() * currentIndex);
-                    currentIndex--;
-                    [array[currentIndex], array[randomIndex]] = [
-                    array[randomIndex], array[currentIndex]];
+                for(let index = array.length - 1; index > 0; index--) {
+                    let randomIndex = Math.floor(Math.random() * (index + 1));
+                    [array[index], array[randomIndex]] = [array[randomIndex], array[index]];
                 }
-                return array;   // note: the array is shuffled in place, retur for ease of use
+                return array;   // note: the array is shuffled in place, return for ease of use
             }
 
             try {

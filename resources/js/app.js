@@ -422,7 +422,7 @@ const app = createApp({
         handleImageSelect(image, event) {
             const index = this.imageFiles.indexOf(image);
 
-            if (event.ctrlKey || event.shiftKey) {
+            if (event.ctrlKey || event.metaKey || event.shiftKey) {
                 if (event.shiftKey && this.lastSelectedIndex !== null) {
                     // Range select
                     const start = Math.min(this.lastSelectedIndex, index);
@@ -433,7 +433,7 @@ const app = createApp({
                         }
                     }
                 } else {
-                    // Toggle select with Ctrl
+                    // Toggle select with Ctrl or meta
                     const pos = this.selectedImages.indexOf(image);
                     if (pos > -1) {
                         this.selectedImages.splice(pos, 1);

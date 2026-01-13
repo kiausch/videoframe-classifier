@@ -92,6 +92,7 @@
                                 <template v-slot:prepend="{ isSelected, select }">
                                     <v-list-item-action start>
                                         <v-checkbox-btn 
+                                            density="compact"
                                             :model-value="selectedVideoFiles.includes(video)"
                                             @update:model-value="toggleSelectedVideo(video)"
                                             @click.stop></v-checkbox-btn>

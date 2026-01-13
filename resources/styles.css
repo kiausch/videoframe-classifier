@@ -2,6 +2,11 @@
   text-transform: none !important;
 }
 
+.v-list-item {
+  min-height: 28px !important;
+}
+
+
 /* Video List Styling */
 .video-list-item {
     cursor: pointer;

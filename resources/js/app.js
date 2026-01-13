@@ -55,7 +55,7 @@ const app = createApp({
     },
     computed: {
         imageQueueFolder() {
-            return this.outputFolder ? this.outputFolder + '/queue' : null;
+            return this.outputFolder ? this.outputFolder + '/pool' : null;
         },
         canPreprocess() {
             return this.selectedVideoFolder && this.outputFolder && this.videoFiles.length > 0;
@@ -243,7 +243,7 @@ const app = createApp({
             if (!this.outputFolder) return;
             for (const label of this.datasetLabels) {
                 this.labelStatistics[label] = 0;
-                const labelFolder = this.outputFolder + '/' + label;
+                const labelFolder = this.outputFolder + '/classes/' + label;
                 try {
                     const stats = await Neutralino.filesystem.getStats(labelFolder);
                     if (stats.isDirectory) {
@@ -482,7 +482,7 @@ const app = createApp({
 
                 const label = this.datasetLabels[labelIndex];
 
-                const labelFolder = this.outputFolder + '/' + label;
+                const labelFolder = this.outputFolder + '/classes/' + label;
 
                 // Create label folder if it doesn't exist
                 try {
@@ -546,7 +546,7 @@ const app = createApp({
                     return;
                 }
                 for (const label of this.datasetLabels) {
-                    const labelFolder = this.outputFolder + '/dataset/' + label;
+                    const labelFolder = this.outputFolder + '/classes/' + label;
                     const datasetFolder = this.outputFolder + '/dataset';
                     await Neutralino.filesystem.createDirectory(datasetFolder).catch(() => {});
                     const trainFolder = datasetFolder + '/train/' + label;

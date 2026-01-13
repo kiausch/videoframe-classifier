@@ -57,7 +57,10 @@ Download pre-built binaries from [Releases](../../releases) for Windows, macOS, 
 ```
 output_folder/
 ├── project.json          # Labels and processed videos list
-├── queue/                # Extracted images to label
+├── pool/                 # Extracted images to label
+├── classes/              # Labeled images
+│   ├── label_1/
+│   └── ...
 ├── dataset/
 │   ├── train/
 │   │   ├── label_1/

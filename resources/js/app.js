@@ -145,12 +145,21 @@ const app = createApp({
 
         setupKeyboardShortcuts() {
             document.addEventListener('keydown', (e) => {
-                // 0-9 for label assignment
+                
+                // 0-9 for label assignment (skip if input is focused)
                 if (e.key >= '0' && e.key <= '9') {
-                    e.preventDefault();
-                    const index = parseInt(e.key);
-                    if (index < this.datasetLabels.length && this.selectedImages.length > 0) {
-                        this.assignLabel(index);
+                    // Check if focus is on an input field
+                    const focusedElement = document.activeElement;
+                    const isInputFocused = focusedElement && (
+                        focusedElement.tagName === 'INPUT' || 
+                        focusedElement.tagName === 'TEXTAREA'
+                    );
+                    if(!isInputFocused) {
+                        e.preventDefault();
+                        const index = parseInt(e.key);
+                        if (index < this.datasetLabels.length && this.selectedImages.length > 0) {
+                            this.assignLabel(index);
+                        }   
                     }
                 }
                 // arrow keys to move selection

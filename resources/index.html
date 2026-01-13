@@ -87,7 +87,7 @@
                                 :title="video" 
                                 @click="selectVideo(video)" 
                                 :class="{ 'v-item--active': currentVideo === video,
-                                                'processed': processedVideoFiles.has(video) }"
+                                                'processed': processedVideoFiles.has(selectedVideoFolder + '/' + video) }"
                                 class="video-list-item">
                                 <template v-slot:prepend="{ isSelected, select }">
                                     <v-list-item-action start>

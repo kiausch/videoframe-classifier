@@ -62,16 +62,19 @@ const app = createApp({
         },
         filteredVideoFiles() {
             if (this.hideProcessedVideos) {
-                return this.videoFiles.filter(video => !this.processedVideoFiles.has(video));
+                return this.videoFiles.filter(video => {
+                    const fullPath = this.selectedVideoFolder + '/' + video;
+                    return !this.processedVideoFiles.has(fullPath);
+                });
             }
             return this.videoFiles;
         }
     },
     watch: {
         isLabelEditorOpen(newVal, oldVal) {
-            // When closing the label editor, write changes to dataset.yaml
+            // When closing the label editor, write changes to project.json
             if (newVal == false && oldVal == true) {
-                this.writeDatasetYaml();
+                this.saveProjectFile();
             }
         }
     },
@@ -109,8 +112,7 @@ const app = createApp({
             try {
                 this.outputFolder = await Neutralino.storage.getData('outputFolder');
                 await this.loadImageFiles();
-                await this.loadDatasetLabels();
-                await this.loadProcessedVideoList();
+                await this.loadProjectFile();
                 await this.updateLabelStatistics();
             }
             catch (error) {
@@ -217,8 +219,7 @@ const app = createApp({
                 if (folder) {
                     this.outputFolder = folder;
                     await this.loadImageFiles();
-                    await this.loadDatasetLabels();
-                    await this.loadProcessedVideoList();
+                    await this.loadProjectFile();
                     this.showMessage('Output folder loaded', 'success');
                     await Neutralino.storage.setData('outputFolder', folder);
                     await this.updateLabelStatistics();
@@ -313,59 +314,43 @@ const app = createApp({
             this.stats.selectedImages = this.selectedImages.length;
         },
 
-        async loadDatasetLabels() {
+        async loadProjectFile() {
             try {
                 if (!this.outputFolder) return;
 
-                const datasetPath = this.outputFolder + '/dataset.yaml';
+                const projectPath = this.outputFolder + '/project.json';
                 try {
-                    const content = await Neutralino.filesystem.readFile(datasetPath);
-                    this.parseDatasetYaml(content);
-                    this.datasetPath = datasetPath;
-                } catch (error) {
-                    this.showMessage('No dataset.yaml found in folder', 'warning');
-                    this.datasetLabels = [];
-                }
-            } catch (error) {
-                this.showMessage('Error loading dataset: ' + error.message, 'error');
-            }
-        },
-
-        parseDatasetYaml(content) {
-            try {
-                // Simple YAML parser for names field
-                const namesMatch = content.match(/names:\s*\n([\s\S]*?)(?=\n[a-z]|\n$)/);
-                if (!namesMatch) {
-                    this.datasetLabels = [];
-                    return;
-                }
-
-                const namesSection = namesMatch[1];
-
-                // Extract id: name pairs
-                const lines = namesSection.split('\n');
-                for (const line of lines) {
-                    const match = line.match(/^\s*(\d+):\s*(.+)$/);
-                    if (match) {
-                        this.datasetLabels.push(match[2].trim());
+                    const content = await Neutralino.filesystem.readFile(projectPath);
+                    const project = JSON.parse(content);
+                    this.datasetLabels = project.labels || [];
+                    this.datasetPath = projectPath;
+                    
+                    if (project.processedVideos) {
+                        for (const video of project.processedVideos) {
+                            this.processedVideoFiles.add(video);
+                        }
                     }
+                } catch (error) {
+                    this.showMessage('No project.json found in folder', 'warning');
+                    this.datasetLabels = [];
                 }
             } catch (error) {
-                this.showMessage('Error parsing dataset.yaml: ' + error.message, 'error');
+                this.showMessage('Error loading project: ' + error.message, 'error');
             }
         },
 
-        async writeDatasetYaml() {
+        async saveProjectFile() {
             try {
                 if (!this.outputFolder) return;
-                const datasetPath = this.outputFolder + '/dataset.yaml';
-                let content = 'names:\n';
-                for (const [index, label] of this.datasetLabels.entries()) {
-                    content += `  ${index}: ${label}\n`;
-                }
-                await Neutralino.filesystem.writeFile(datasetPath, content);
+                const projectPath = this.outputFolder + '/project.json';
+                const project = {
+                    labels: this.datasetLabels,
+                    processedVideos: [...this.processedVideoFiles]
+                };
+                const content = JSON.stringify(project, null, 2);
+                await Neutralino.filesystem.writeFile(projectPath, content);
             } catch (error) {
-                this.showMessage('Error writing dataset.yaml: ' + error.message, 'error');
+                this.showMessage('Error saving project: ' + error.message, 'error');
             }
         },
 
@@ -375,28 +360,6 @@ const app = createApp({
 
         removeLabel(index) {
             this.datasetLabels.splice(index, 1);
-        },
-
-        async loadProcessedVideoList() {
-            try {
-                const processedPath = this.outputFolder + '/processed_videos.txt';
-                const content = await Neutralino.filesystem.readFile(processedPath);
-                const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-                for (const line of lines) {
-                    this.processedVideoFiles.add(line);
-                }
-            } catch (error) {
-            }
-        },
-
-        async saveProcessedVideoList() {
-            try {
-                const processedPath = this.outputFolder + '/processed_videos.txt';
-                const content = [...this.processedVideoFiles].join('\n');
-                await Neutralino.filesystem.writeFile(processedPath, content);
-            } catch (error) {
-                this.showMessage('Error saving processed video list: ' + error.message, 'error');
-            }
         },
 
         /* ===== Video Selection ===== */
@@ -485,9 +448,10 @@ const app = createApp({
                 this.isPreprocessing = false;
                 this.showMessage(`Processed ${processedCount} video(s)`, 'success');
                 while(processedVideo = this.selectedVideoFiles.pop()) {
-                    this.processedVideoFiles.add(processedVideo);
+                    const fullPath = this.selectedVideoFolder + '/' + processedVideo;
+                    this.processedVideoFiles.add(fullPath);
                 }
-                await this.saveProcessedVideoList();
+                await this.saveProjectFile();
             } catch (error) {
                 this.isPreprocessing = false;
                 this.showMessage('Preprocessing error: ' + error.message, 'error');
@@ -573,9 +537,11 @@ const app = createApp({
                     return;
                 }
                 for (const label of this.datasetLabels) {
-                    const labelFolder = this.outputFolder + '/' + label;
-                    const trainFolder = this.outputFolder + '/train/' + label;
-                    const valFolder = this.outputFolder + '/val/' + label;
+                    const labelFolder = this.outputFolder + '/dataset/' + label;
+                    const datasetFolder = this.outputFolder + '/dataset';
+                    await Neutralino.filesystem.createDirectory(datasetFolder).catch(() => {});
+                    const trainFolder = datasetFolder + '/train/' + label;
+                    const valFolder = datasetFolder + '/val/' + label;
                     try {
                         const stats = await Neutralino.filesystem.getStats(labelFolder);
                         if (stats.isDirectory) {
@@ -595,7 +561,20 @@ const app = createApp({
                         this.showMessage('Error creating training dataset: ' + error.message, 'error');
                     }
                 }
-                this.showMessage('Training dataset created successfully', 'success');
+                
+                // Create dataset.yaml
+                try {
+                    const datasetPath = this.outputFolder + '/dataset/dataset.yaml';
+                    let yamlContent = 'names:\n';
+                    for (const [index, label] of this.datasetLabels.entries()) {
+                        yamlContent += `  ${index}: ${label}\n`;
+                    }
+                    yamlContent += `\nsplits:\n  train: ${this.trainingSplit}\n  val: ${1 - this.trainingSplit}\n`;
+                    await Neutralino.filesystem.writeFile(datasetPath, yamlContent);
+                    this.showMessage('Training dataset created successfully', 'success');
+                } catch (error) {
+                    this.showMessage('Error creating dataset.yaml: ' + error.message, 'error');
+                }
             } catch (error) {
                 this.showMessage('Error creating training dataset: ' + error.message, 'error');
             }

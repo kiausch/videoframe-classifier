@@ -463,7 +463,7 @@ const app = createApp({
                 await this.saveProjectFile();
             } catch (error) {
                 this.isPreprocessing = false;
-                this.showMessage('Preprocessing error: ' + error.message, 'error');
+                this.showMessage('Error extracting frames: ' + error.message, 'error');
             }
         },
 

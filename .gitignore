@@ -12,3 +12,27 @@ neutralino.js
 .storage
 *.log
 .tmp
+
+# Vite
+node_modules/
+.npm
+build/
+release/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

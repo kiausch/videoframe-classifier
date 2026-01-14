@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "defaultMode": "window",
   "port": 0,
-  "documentRoot": "/resources/",
+  "documentRoot": "/dist/",
   "url": "/index.html",
   "enableServer": true,
   "enableNativeAPI": true,
@@ -19,6 +19,7 @@
     "filesystem.*",
     "server.*",
     "storage.*",
+    "window.*",
     "debug.log"
   ],
   "globalVariables": {
@@ -27,50 +28,32 @@
   "modes": {
     "window": {
       "title": "ml-video-classifier",
-      "width": 800,
-      "height": 500,
-      "minWidth": 400,
-      "minHeight": 200,
+      "width": 1400,
+      "height": 800,
+      "minWidth": 1024,
+      "minHeight": 600,
       "center": true,
       "fullScreen": false,
       "alwaysOnTop": false,
-      "icon": "/resources/icons/appIcon.png",
+      "icon": "/src/assets/appIcon.png",
       "enableInspector": true,
       "borderless": false,
       "maximize": false,
       "hidden": false,
       "resizable": true,
-      "exitProcessOnClose": false
-    },
-    "browser": {
-      "globalVariables": {
-      },
-      "nativeBlockList": [
-        "filesystem.*"
-      ]
-    },
-    "cloud": {
-      "url": "/resources/#cloud",
-      "nativeAllowList": [
-        "app.*"
-      ]
-    },
-    "chrome": {
-      "width": 800,
-      "height": 500,
-      "args": "--user-agent=\"Neutralinojs chrome mode\"",
-      "nativeBlockList": [
-        "filesystem.*",
-        "os.*"
-      ]
+      "exitProcessOnClose": false,
+      "injectGlobals": true
     }
   },
   "cli": {
     "binaryName": "ml-video-classifier",
-    "resourcesPath": "/resources/",
-    "extensionsPath": "/extensions/",
-    "clientLibrary": "/resources/js/neutralino.js",
+    "resourcesPath": "/dist/",
     "binaryVersion": "6.4.0",
-    "clientVersion": "6.4.0"
+    "clientVersion": "6.4.0",
+    "distributionPath": "/release/",
+    "hostProject": {
+      "projectPath": "./",
+      "buildCommand": "npm run vite-build"
+    }
   }
 }

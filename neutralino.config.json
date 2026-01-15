@@ -1,9 +1,9 @@
 {
   "$schema": "https://raw.githubusercontent.com/neutralinojs/neutralinojs/main/schemas/neutralino.config.schema.json",
-  "applicationId": "ml.video.classifier",
+  "applicationId": "videoframe.classifier",
   "version": "1.0.0",
   "defaultMode": "window",
-  "port": 0,
+  "port": 5174,
   "documentRoot": "/dist/",
   "url": "/index.html",
   "enableServer": true,
@@ -27,7 +27,7 @@
   },
   "modes": {
     "window": {
-      "title": "ml-video-classifier",
+      "title": "VideoFrame Classifier",
       "width": 1400,
       "height": 800,
       "minWidth": 1024,
@@ -46,14 +46,16 @@
     }
   },
   "cli": {
-    "binaryName": "ml-video-classifier",
+    "binaryName": "videoframe-classifier",
     "resourcesPath": "/dist/",
     "binaryVersion": "6.4.0",
     "clientVersion": "6.4.0",
     "distributionPath": "/release/",
-    "hostProject": {
+    "frontendLibrary": {
       "projectPath": "./",
-      "buildCommand": "npm run vite-build"
+      "buildCommand": "npm run vite-build",
+      "devCommand": "npm run vite-dev",
+      "devUrl": "http://localhost:5173"
     }
   }
 }

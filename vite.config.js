@@ -16,6 +16,10 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    strictPort: true
+    strictPort: true,
+    proxy: {
+      '/images': 'http://localhost:5174',
+      '/videos': 'http://localhost:5174'
+    }
   }
 })

@@ -374,12 +374,21 @@ export default {
 
             if (event.ctrlKey || event.metaKey || event.shiftKey) {
                 if (event.shiftKey && this.lastSelectedIndex !== null) {
-                    // Range select
-                    const start = Math.min(this.lastSelectedIndex, index);
-                    const end = Math.max(this.lastSelectedIndex, index);
-                    for (let i = start; i <= end; i++) {
-                        if (!this.selectedImages.includes(this.imageFiles[i])) {
-                            this.selectedImages.push(this.imageFiles[i]);
+                    const increment = index > this.lastSelectedIndex ? -1 : 1;
+                    if (this.selectedImages.includes(image)) {
+                        // Deselect range from lastSelectedIndex to index (not including index)
+                        for (let i = this.lastSelectedIndex; i != index; i -= increment) {
+                            const pos = this.selectedImages.indexOf(this.imageFiles[i]);
+                            if (pos > -1) {
+                                this.selectedImages.splice(pos, 1);
+                            }
+                        }
+                    } else {
+                        // Select range from lastSelectedIndex to index (including index)
+                        for (let i = index; i != this.lastSelectedIndex; i += increment) {
+                            if (!this.selectedImages.includes(this.imageFiles[i])) {
+                                this.selectedImages.push(this.imageFiles[i]);
+                            }
                         }
                     }
                 } else {

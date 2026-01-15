@@ -1,4 +1,4 @@
-# ML Video Classifier
+# Videoframe Classifier
 
 Video frame extraction and image labeling tool for building training datasets.
 
@@ -19,7 +19,7 @@ Built with [Vue 3](https://vuejs.org/), [Vuetify](https://vuetifyjs.com/), and [
 
 - **Video Processing**: Extract frames from MP4, AVI, MOV, MKV, FLV, WMV, WebM (using ffmpeg)
 - **Batch Operations**: Process multiple videos and label images in bulk
-- **Keyboard Shortcuts**: Optimized power-user workflow
+- **Keyboard Shortcuts**: Optimized workflow
 - **Persistent Settings**: Auto-save workspace state
 - **Dataset Export**: Create train/val splits with structured metadata
 
@@ -90,13 +90,13 @@ Example `project.json`:
 
 ## Building from Source
 
-Prerequisites: [Node.js](https://nodejs.org/) and [Neutralino CLI](https://neutralino.js.org/docs/tools/cli/)
+Prerequisites: [Node.js](https://nodejs.org/)
 
 ```bash
-npm install -g @neutralinojs/neu
-neu update
-neu run              # development
-neu build            # production binaries
+npm install              # Install dependencies
+npm run update           # Initialize neutralino binaries
+npm run dev              # Run development server
+npm run build            # Build production binaries with Neutralino
 ```
 
 ## Contributing

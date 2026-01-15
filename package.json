@@ -1,11 +1,11 @@
 {
-  "name": "ml-video-classifier",
+  "name": "videoframe-classifier",
   "version": "1.0.0",
-  "description": "ML Video Classifier - Extract frames and label images for ML training",
+  "description": "VideoFrame Classifier - Extract frames and label images for ML training",
   "type": "module",
   "scripts": {
-    "init": "neu update",
-    "start": "neu run -- --window-enable-inspector=true",
+    "update": "neu update",
+    "dev": "neu run -- --window-enable-inspector=true",
     "build": "neu build",
     "vite-dev": "vite",
     "vite-build": "vite build"

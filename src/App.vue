@@ -11,7 +11,7 @@ export default {
             processedVideoFiles: new Set(),
             currentVideo: null,
             currentVideoUrl: null,
-            outputFolder: null,
+            projectFolder: null,
             isPreprocessing: false,
             hideProcessedVideos: true,
             imageExtractionFramerate: 1,
@@ -24,7 +24,6 @@ export default {
 
             // Right Column - Label Assignment
             datasetLabels: [],
-            datasetPath: null,
             isLabelEditorOpen: false,
             lastMoved: [], // for undo functionality
             labelStatistics: {},
@@ -52,10 +51,10 @@ export default {
     },
     computed: {
         imageQueueFolder() {
-            return this.outputFolder ? this.outputFolder + '/pool' : null;
+            return this.projectFolder ? this.projectFolder + '/pool' : null;
         },
         canPreprocess() {
-            return this.selectedVideoFolder && this.outputFolder && this.videoFiles.length > 0;
+            return this.selectedVideoFolder && this.projectFolder && this.videoFiles.length > 0;
         },
         filteredVideoFiles() {
             if (this.hideProcessedVideos) {
@@ -88,13 +87,13 @@ export default {
                 this.selectedVideoFolder = null;
             }
             try {
-                this.outputFolder = await storage.getData('outputFolder');
+                this.projectFolder = await storage.getData('projectFolder');
                 await this.loadImageFiles();
                 await this.loadProjectFile();
                 await this.updateLabelStatistics();
             }
             catch (error) {
-                this.outputFolder = null;
+                this.projectFolder = null;
             }
         },
 
@@ -200,16 +199,15 @@ export default {
             }
         },
 
-        async selectOutputFolder() {
+        async selectProjectFolder() {
             try {
-                const folder = await os.showFolderDialog('Select Output Folder');
+                const folder = await os.showFolderDialog('Select Project Folder');
                 if (folder) {
-                    this.outputFolder = folder;
-                    await this.loadImageFiles();
+                    this.projectFolder = folder;
                     await this.loadProjectFile();
-                    this.showMessage('Output folder loaded', 'success');
-                    await storage.setData('outputFolder', folder);
+                    await this.loadImageFiles();
                     await this.updateLabelStatistics();
+                    await storage.setData('projectFolder', folder);
                 }
             } catch (error) {
                 this.showMessage('Error selecting folder: ' + error.message, 'error');
@@ -218,10 +216,10 @@ export default {
 
         async updateLabelStatistics() {
             this.labelStatistics = {};
-            if (!this.outputFolder) return;
+            if (!this.projectFolder) return;
             for (const label of this.datasetLabels) {
                 this.labelStatistics[label] = 0;
-                const labelFolder = this.outputFolder + '/classes/' + label;
+                const labelFolder = this.projectFolder + '/classes/' + label;
                 try {
                     const stats = await filesystem.getStats(labelFolder);
                     if (stats.isDirectory) {
@@ -302,34 +300,31 @@ export default {
         },
 
         async loadProjectFile() {
-            try {
-                if (!this.outputFolder) return;
+            if (!this.projectFolder) return;
 
-                const projectPath = this.outputFolder + '/project.json';
-                try {
-                    const content = await filesystem.readFile(projectPath);
-                    const project = JSON.parse(content);
-                    this.datasetLabels = project.labels || [];
-                    this.datasetPath = projectPath;
-                    
-                    if (project.processedVideos) {
-                        for (const video of project.processedVideos) {
-                            this.processedVideoFiles.add(video);
-                        }
+            const projectPath = this.projectFolder + '/project.json';
+            try {
+                const content = await filesystem.readFile(projectPath);
+                const project = JSON.parse(content);
+                this.datasetLabels = project.labels || [];
+                
+                if (project.processedVideos) {
+                    for (const video of project.processedVideos) {
+                        this.processedVideoFiles.add(video);
                     }
-                } catch (error) {
-                    this.showMessage('No project.json found in folder', 'warning');
-                    this.datasetLabels = [];
                 }
+                this.showMessage('Project loaded', 'success');
             } catch (error) {
-                this.showMessage('Error loading project: ' + error.message, 'error');
+                this.showMessage('No project.json found or error reading file. Starting new project', 'success');
+                this.datasetLabels = [];
+                this.processedVideoFiles.clear();
             }
         },
 
         async saveProjectFile() {
             try {
-                if (!this.outputFolder) return;
-                const projectPath = this.outputFolder + '/project.json';
+                if (!this.projectFolder) return;
+                const projectPath = this.projectFolder + '/project.json';
                 const project = {
                     labels: this.datasetLabels,
                     processedVideos: [...this.processedVideoFiles]
@@ -443,6 +438,7 @@ export default {
                 await this.loadImageFiles();
                 this.isPreprocessing = false;
                 this.showMessage(`Processed ${processedCount} video(s)`, 'success');
+                let processedVideo;
                 while(processedVideo = this.selectedVideoFiles.pop()) {
                     const fullPath = this.selectedVideoFolder + '/' + processedVideo;
                     this.processedVideoFiles.add(fullPath);
@@ -457,8 +453,8 @@ export default {
         /* ===== Label Assignment ===== */
         async assignLabel(labelIndex) {
             try {
-                if (!this.outputFolder || this.selectedImages.length === 0) {
-                    this.showMessage('Select output folder and images', 'warning');
+                if (!this.projectFolder || this.selectedImages.length === 0) {
+                    this.showMessage('Select project folder and images', 'warning');
                     return;
                 }
 
@@ -469,7 +465,7 @@ export default {
 
                 const label = this.datasetLabels[labelIndex];
 
-                const labelFolder = this.outputFolder + '/classes/' + label;
+                const labelFolder = this.projectFolder + '/classes/' + label;
 
                 // Create label folder if it doesn't exist
                 try {
@@ -528,13 +524,13 @@ export default {
             }
 
             try {
-                if (!this.outputFolder) {
-                    this.showMessage('Select output folder first', 'warning');
+                if (!this.projectFolder) {
+                    this.showMessage('Select project folder first', 'warning');
                     return;
                 }
                 for (const label of this.datasetLabels) {
-                    const labelFolder = this.outputFolder + '/classes/' + label;
-                    const datasetFolder = this.outputFolder + '/dataset';
+                    const labelFolder = this.projectFolder + '/classes/' + label;
+                    const datasetFolder = this.projectFolder + '/dataset';
                     await filesystem.createDirectory(datasetFolder).catch(() => {});
                     const trainFolder = datasetFolder + '/train/' + label;
                     const valFolder = datasetFolder + '/val/' + label;
@@ -560,7 +556,7 @@ export default {
                 
                 // Create dataset.yaml
                 try {
-                    const datasetPath = this.outputFolder + '/dataset/dataset.yaml';
+                    const datasetPath = this.projectFolder + '/dataset/dataset.yaml';
                     let yamlContent = 'names:\n';
                     for (const [index, label] of this.datasetLabels.entries()) {
                         yamlContent += `  ${index}: ${label}\n`;
@@ -639,11 +635,11 @@ export default {
                         ></v-text-field>
 
                         <v-text-field
-                            label="Choose Output Folder"
-                            :model-value="outputFolder"
-                            :title="outputFolder"
+                            label="Choose Project Folder"
+                            :model-value="projectFolder"
+                            :title="projectFolder"
                             append-inner-icon="mdi-folder-open"
-                            @click:append-inner="selectOutputFolder"
+                            @click:append-inner="selectProjectFolder"
                             variant="outlined"
                             readonly
                         ></v-text-field>
@@ -694,7 +690,7 @@ export default {
                             ></v-number-input>
                         <v-btn color="success"
                             block
-                            :disabled="!selectedVideoFolder || !outputFolder || videoFiles.length === 0"
+                            :disabled="!selectedVideoFolder || !projectFolder || videoFiles.length === 0"
                             :loading="isPreprocessing"
                             @click="extractFramesFromVideos"
                             prepend-icon="mdi-play"
@@ -764,7 +760,7 @@ export default {
                     <v-toolbar density="compact">
                         <v-toolbar-title>Assign Label</v-toolbar-title>
                         <v-btn icon="mdi-playlist-edit" @click="isLabelEditorOpen = true"
-                            title="Edit Labels"></v-btn>
+                            title="Edit Labels" :disabled="!projectFolder"></v-btn>
                     </v-toolbar>
                     <v-card-text v-if="datasetLabels.length > 0">
                         <!-- Label Buttons -->
@@ -783,7 +779,7 @@ export default {
                     </v-card-text>
 
                     <v-card-text v-else class="flex-center mt-4">
-                        <p class="text-caption text-disabled">Select output folder</p>
+                        <p class="text-caption text-disabled">Select project folder</p>
                     </v-card-text>
                 </v-card>
 
@@ -823,7 +819,8 @@ export default {
                             block
                             @click="createTrainingDataset"
                             prepend-icon="mdi-folder-plus"
-                            title="Create Training Dataset">
+                            title="Create Training Dataset"
+                            :disabled="!projectFolder">
                             Create Training Dataset
                         </v-btn>
                     </v-card-text>

@@ -260,11 +260,15 @@ export default {
 
         async loadImageFiles() {
             try {
-                if (!this.imageQueueFolder) return;
-
+                
                 try {
+                    if (!this.imageQueueFolder) {
+                        throw new Error();
+                    }
                     await filesystem.getStats(this.imageQueueFolder);
                 } catch (error) {
+                    this.imageFiles = [];
+                    this.stats.imageCount = 0;
                     return;
                 }
                 
@@ -762,7 +766,13 @@ export default {
                         <v-btn icon="mdi-playlist-edit" @click="isLabelEditorOpen = true"
                             title="Edit Labels" :disabled="!projectFolder"></v-btn>
                     </v-toolbar>
-                    <v-card-text v-if="datasetLabels.length > 0">
+                    <v-card-text v-if="!projectFolder" class="flex-center mt-4">
+                        <p class="text-caption text-disabled">Select project folder</p>
+                    </v-card-text>
+                    <v-card-text v-else-if="datasetLabels.length == 0" class="flex-center mt-4">
+                        <p class="text-caption text-disabled">Create labels using the "Edit Labels" button</p>
+                    </v-card-text>
+                    <v-card-text v-else>
                         <!-- Label Buttons -->
                         <v-btn v-for="(label, index) in datasetLabels" :key="index" 
                             block
@@ -778,9 +788,6 @@ export default {
                         </v-btn>
                     </v-card-text>
 
-                    <v-card-text v-else class="flex-center mt-4">
-                        <p class="text-caption text-disabled">Select project folder</p>
-                    </v-card-text>
                 </v-card>
 
                 <v-card class="mt-2">
@@ -820,7 +827,7 @@ export default {
                             @click="createTrainingDataset"
                             prepend-icon="mdi-folder-plus"
                             title="Create Training Dataset"
-                            :disabled="!projectFolder">
+                            :disabled="!projectFolder || datasetLabels.length == 0">
                             Create Training Dataset
                         </v-btn>
                     </v-card-text>

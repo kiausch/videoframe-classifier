@@ -614,7 +614,7 @@ export default {
         </v-dialog>
 
         <v-app-bar color="primary" density="comfortable">
-            <v-app-bar-title>ML Video Classification Tool</v-app-bar-title>
+            <v-app-bar-title>Video Frame Classification Tool</v-app-bar-title>
             <template v-slot:append>
                 <span v-if="stats">
                     Videos: {{ stats.videoCount }} | Images: {{ stats.imageCount }} | Selected: {{ stats.selectedImages }}

@@ -480,6 +480,7 @@ export default {
 
                 let movedCount = 0;
                 this.lastMoved = [];
+                let removeIndex;
                 for (const image of this.selectedImages) {
                     try {
                         const sourcePath = this.imageQueueFolder + '/' + image;
@@ -487,13 +488,26 @@ export default {
                         await filesystem.move(sourcePath, destPath);
                         this.lastMoved.push({from: sourcePath, to: destPath});
                         movedCount++;
-                        this.imageFiles.splice(this.imageFiles.indexOf(image), 1);
+                        removeIndex = this.imageFiles.indexOf(image);
+                        this.imageFiles.splice(removeIndex, 1);
                     } catch (error) {
                         this.showMessage(`Error moving ${image}: ` + error.message, 'warning');
                     }
                 }
 
-                this.selectedImages = [];
+                // next selected image is the one after the last moved
+                let nextIndex = removeIndex;
+                if (nextIndex >= this.imageFiles.length) {
+                    nextIndex = this.imageFiles.length - 1;
+                }
+                if (nextIndex >= 0) {
+                    this.selectedImages = [this.imageFiles[nextIndex]];
+                    this.lastSelectedIndex = nextIndex;
+                } else {
+                    this.selectedImages = [];
+                    this.lastSelectedIndex = null;
+                }
+
                 this.labelStatistics[label] += movedCount;
                 this.showMessage(`Moved ${movedCount} image(s) to ${label}`, 'success');
             } catch (error) {

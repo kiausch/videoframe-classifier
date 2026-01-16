@@ -808,7 +808,7 @@ export default {
 
                 <v-card class="mt-2">
                     <v-toolbar density="compact">
-                        <v-toolbar-title>Create Training Dataset</v-toolbar-title>
+                        <v-toolbar-title>Training Dataset</v-toolbar-title>
                     </v-toolbar>
                     <v-card-text>
                         <div class="text-caption">Training Set Percentage</div>

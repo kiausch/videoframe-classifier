@@ -15,7 +15,7 @@ Existing labeling solutions like Label-Studio proved cumbersome for this workflo
 
 Built with [Vue 3](https://vuejs.org/), [Vuetify](https://vuetifyjs.com/), and [Neutralino.js](https://neutralino.js.org/).
 
-![Screenshot](doc/screenshot.png)
+![Screenshot](doc/Screenshot.png)
 
 ## Features
 

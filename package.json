@@ -1,6 +1,6 @@
 {
   "name": "videoframe-classifier",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "VideoFrame Classifier - Extract frames and label images for ML training",
   "type": "module",
   "scripts": {

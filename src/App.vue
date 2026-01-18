@@ -222,6 +222,9 @@ export default {
                 if (folder) {
                     this.projectFolder = folder;
                     await this.loadProjectFile();
+                    if (this.selectedVideoFolder) {
+                        await this.loadVideoFiles();
+                    }
                     await this.loadImageFiles();
                     await this.updateLabelStatistics();
                     await storage.setData('projectFolder', folder);

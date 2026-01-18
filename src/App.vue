@@ -8,6 +8,7 @@ export default {
             selectedVideoFolder: null,
             videoFiles: [],
             selectedVideoFiles: [],
+            lastSelectedVideoIndex: null,
             processedVideoFiles: new Set(),
             currentVideo: null,
             currentVideoUrl: null,
@@ -72,6 +73,14 @@ export default {
                 });
             }
             return this.videoFiles;
+        },
+        allVideosSelected() {
+            return this.filteredVideoFiles.length > 0 && 
+                   this.selectedVideoFiles.length === this.filteredVideoFiles.length;
+        },
+        someVideosSelected() {
+            return this.selectedVideoFiles.length > 0 && 
+                   this.selectedVideoFiles.length < this.filteredVideoFiles.length;
         }
     },
     watch: {
@@ -367,13 +376,44 @@ export default {
             this.currentVideo = videoName;
             this.currentVideoUrl = this.getServerUrl('videos', videoName);
         },
-        toggleSelectedVideo(videoName) {
-            const index = this.selectedVideoFiles.indexOf(videoName);
-            if (index > -1) {
-                this.selectedVideoFiles.splice(index, 1);
+        toggleSelectedVideo(videoName, event) {
+            const currentIndex = this.filteredVideoFiles.indexOf(videoName);
+            
+            if (event && event.shiftKey && this.lastSelectedVideoIndex !== null) {
+                // Shift+click: range selection
+                const start = Math.min(this.lastSelectedVideoIndex, currentIndex);
+                const end = Math.max(this.lastSelectedVideoIndex, currentIndex);
+                
+                for (let i = start; i <= end; i++) {
+                    const video = this.filteredVideoFiles[i];
+                    if (!this.selectedVideoFiles.includes(video)) {
+                        this.selectedVideoFiles.push(video);
+                    }
+                }
+                this.lastSelectedVideoIndex = currentIndex;
             } else {
-                this.selectedVideoFiles.push(videoName);
+                // Regular toggle
+                const index = this.selectedVideoFiles.indexOf(videoName);
+                if (index > -1) {
+                    this.selectedVideoFiles.splice(index, 1);
+                    this.lastSelectedVideoIndex = null;
+                } else {
+                    this.selectedVideoFiles.push(videoName);
+                    this.lastSelectedVideoIndex = currentIndex;
+                }
             }
+            
+        },
+
+        toggleAllVideos() {
+            if (this.selectedVideoFiles.length === this.filteredVideoFiles.length) {
+                // All selected, deselect all
+                this.selectedVideoFiles = [];
+            } else {
+                // Select all filtered videos
+                this.selectedVideoFiles = [...this.filteredVideoFiles];
+            }
+            this.lastSelectedVideoIndex = null;
         },
 
         /* ===== Image Gallery ===== */
@@ -763,6 +803,12 @@ export default {
                 <!-- Video List -->
                 <v-card class="flex-1-1 d-flex flex-column mb-2">
                     <v-toolbar density="compact">
+                        <v-checkbox-btn 
+                            :model-value="allVideosSelected"
+                            :indeterminate="someVideosSelected"
+                            @update:model-value="toggleAllVideos"
+                            class="me-1 flex-0-0"
+                            title="Select all videos"></v-checkbox-btn>
                         <v-toolbar-title>Select Videos</v-toolbar-title>
                         <v-btn icon="mdi-filter-check-outline" title="show processed"
                             @click="hideProcessedVideos = !hideProcessedVideos"
@@ -782,8 +828,8 @@ export default {
                                     <v-checkbox-btn 
                                         density="compact"
                                         :model-value="selectedVideoFiles.includes(video)"
-                                        @update:model-value="toggleSelectedVideo(video)"
-                                        @click.stop></v-checkbox-btn>
+                                        @click.stop="toggleSelectedVideo(video, $event)"
+                                    ></v-checkbox-btn>
                                 </v-list-item-action>
                             </template>
                         </v-list-item>

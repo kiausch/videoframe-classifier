@@ -50,6 +50,13 @@ export default {
         };
     },
     computed: {
+        stats() {
+            return {
+                videoCount: this.videoFiles.length,
+                imageCount: this.imageFiles.length,
+                selectedImages: this.selectedImages.length
+            };
+        },
         imageQueueFolder() {
             return this.projectFolder ? this.projectFolder + '/pool' : null;
         },
@@ -250,7 +257,6 @@ export default {
                     .map(file => file.entry)
                     .sort();
 
-                this.stats.videoCount = this.videoFiles.length;
                 this.currentVideo = null;
                 this.currentVideoUrl = null;
             } catch (error) {
@@ -268,7 +274,6 @@ export default {
                     await filesystem.getStats(this.imageQueueFolder);
                 } catch (error) {
                     this.imageFiles = [];
-                    this.stats.imageCount = 0;
                     return;
                 }
                 
@@ -284,7 +289,6 @@ export default {
                     .map(file => file.entry)
                     .sort();
 
-                this.stats.imageCount = this.imageFiles.length;
                 this.initImageSelection();
 
             } catch (error) {
@@ -300,7 +304,6 @@ export default {
                 this.selectedImages = [];
                 this.lastSelectedIndex = null;
             }
-            this.stats.selectedImages = this.selectedImages.length;
         },
 
         async loadProjectFile() {
@@ -405,7 +408,6 @@ export default {
             }
 
             this.lastSelectedIndex = index;
-            this.stats.selectedImages = this.selectedImages.length;
         },
 
         /* ===== Video Preprocessing ===== */

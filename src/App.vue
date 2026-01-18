@@ -671,6 +671,7 @@ export default {
                             :title="selectedVideoFolder"
                             append-inner-icon="mdi-folder-open"
                             @click:append-inner="selectVideoFolder"
+                            :disabled="!projectFolder"
                             variant="outlined"
                             readonly
                         ></v-text-field>
@@ -839,7 +840,7 @@ export default {
                         <v-toolbar-title>Training Dataset</v-toolbar-title>
                     </v-toolbar>
                     <v-card-text>
-                        <div class="text-caption">Training Set Percentage</div>
+                        <div class="text-caption">Train / Validate Split</div>
                         <v-slider v-model="trainingSplit"
                             min="0.5"
                             max="0.95"

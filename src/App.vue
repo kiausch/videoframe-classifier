@@ -657,6 +657,18 @@ export default {
         },
 
         /* ===== Helper Methods ===== */
+        /* used to blur active element when preview size slider is focused to avoid
+           keyboard shortcuts interfering with slider input */
+        blurActiveElement(focused) {
+            if (focused) {
+                this.$nextTick(() => {
+                    if (document.activeElement && document.activeElement.blur) {
+                        document.activeElement.blur();
+                    }
+                });
+            }
+        },
+
         getKeyboardShortcut(index) {
             return `${index}`;
         },
@@ -825,7 +837,7 @@ export default {
                     <v-toolbar density="compact">
                         <v-toolbar-title>Images to Classify</v-toolbar-title>
                         <v-slider v-model="previewSize" label="Image Size" min="128" max="512" step="16"
-                            style="max-width: 250px" class="align-center" hide-details>
+                            style="max-width: 250px" class="align-center" hide-details @update:focused="blurActiveElement">
                             <template v-slot:append>
                                 <span v-text="previewSize + 'px'"></span>
                             </template>

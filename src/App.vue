@@ -761,14 +761,14 @@ export default {
                 </v-card>
 
                 <!-- Video List -->
-                <v-card class="flex-1-1 overflow-auto mb-2">
+                <v-card class="flex-1-1 d-flex flex-column mb-2">
                     <v-toolbar density="compact">
                         <v-toolbar-title>Select Videos</v-toolbar-title>
                         <v-btn icon="mdi-filter-check-outline" title="show processed"
                             @click="hideProcessedVideos = !hideProcessedVideos"
                             :class="{ 'opacity-30': hideProcessedVideos }"></v-btn>
                     </v-toolbar>
-                    <v-list density="compact">
+                    <v-list density="compact" class="overflow-auto">
                         <v-list-item v-for="video in filteredVideoFiles" 
                             :key="video" 
                             :value="video"
@@ -869,8 +869,8 @@ export default {
 
         <!-- Right Column: Label Assignment -->
         <v-navigation-drawer location="right" width="300" permanent>
-            <v-container class="d-flex flex-column h-100 pa-2">
-                <v-card>
+            <v-container class="d-flex flex-column h-100 pa-2 overflow-y-auto">
+                <v-card class="flex-0-0">
                     <v-toolbar density="compact">
                         <v-toolbar-title>Assign Label</v-toolbar-title>
                         <v-btn icon="mdi-playlist-edit" @click="isLabelEditorOpen = true"
@@ -900,7 +900,7 @@ export default {
 
                 </v-card>
 
-                <v-card class="mt-2">
+                <v-card class="mt-2 flex-0-0">
                     <v-toolbar density="compact">
                         <v-toolbar-title>Statistics</v-toolbar-title>
                         <v-btn icon="mdi-refresh" @click="updateLabelStatistics" title="Refresh Statistics"></v-btn>
@@ -916,7 +916,7 @@ export default {
                     </v-card-text>
                 </v-card>
 
-                <v-card class="mt-2">
+                <v-card class="mt-2 flex-0-0">
                     <v-toolbar density="compact">
                         <v-toolbar-title>Training Dataset</v-toolbar-title>
                     </v-toolbar>

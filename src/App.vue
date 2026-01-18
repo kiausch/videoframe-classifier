@@ -36,6 +36,7 @@ export default {
                 color: 'info',
                 timeout: 3000
             },
+            overwriteConfirmDialog: false,
 
             // Statistics
             stats: {
@@ -545,6 +546,47 @@ export default {
         },
 
         async createTrainingDataset() {
+            try {
+                if (!this.projectFolder) {
+                    this.showMessage('Select project folder first', 'warning');
+                    return;
+                }
+
+                // Check if train or val folders already exist
+                const datasetFolder = this.projectFolder + '/dataset';
+                const trainFolder = datasetFolder + '/train';
+                const valFolder = datasetFolder + '/val';
+                
+                let trainExists = false;
+                let valExists = false;
+                
+                try {
+                    const trainStats = await filesystem.getStats(trainFolder);
+                    trainExists = trainStats.isDirectory;
+                } catch (e) {
+                    trainExists = false;
+                }
+                
+                try {
+                    const valStats = await filesystem.getStats(valFolder);
+                    valExists = valStats.isDirectory;
+                } catch (e) {
+                    valExists = false;
+                }
+
+                // Show confirmation if either folder exists
+                if (trainExists || valExists) {
+                    this.overwriteConfirmDialog = true;
+                    return;
+                }
+
+                await this.performTrainingDatasetCreation();
+            } catch (error) {
+                this.showMessage('Error: ' + error.message, 'error');
+            }
+        },
+
+        async performTrainingDatasetCreation() {
             function shuffle(array) {
                 for(let index = array.length - 1; index > 0; index--) {
                     let randomIndex = Math.floor(Math.random() * (index + 1));
@@ -554,13 +596,25 @@ export default {
             }
 
             try {
-                if (!this.projectFolder) {
-                    this.showMessage('Select project folder first', 'warning');
-                    return;
+                // Delete existing train and val folders if they exist
+                const datasetFolder = this.projectFolder + '/dataset';
+                const trainFolder = datasetFolder + '/train';
+                const valFolder = datasetFolder + '/val';
+
+                try {
+                    await filesystem.removeDirectory(trainFolder);
+                } catch (e) {
+                    // Folder doesn't exist, ignore
                 }
+
+                try {
+                    await filesystem.removeDirectory(valFolder);
+                } catch (e) {
+                    // Folder doesn't exist, ignore
+                }
+
                 for (const label of this.datasetLabels) {
                     const labelFolder = this.projectFolder + '/classes/' + label;
-                    const datasetFolder = this.projectFolder + '/dataset';
                     await filesystem.createDirectory(datasetFolder).catch(() => {});
                     const trainFolder = datasetFolder + '/train/' + label;
                     const valFolder = datasetFolder + '/val/' + label;
@@ -635,6 +689,21 @@ export default {
                 <v-card-actions>
                     <v-spacer></v-spacer>
                     <v-btn text @click="isLabelEditorOpen = false">Close</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
+        <v-dialog v-model="overwriteConfirmDialog" max-width="400px">
+            <v-card>
+                <v-card-title>Overwrite Training Data?</v-card-title>
+                <v-card-text>
+                    <p>Training or validation folders already exist. Creating a new training dataset will overwrite the existing data.</p>
+                    <p><strong>Do you want to continue?</strong></p>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn text @click="overwriteConfirmDialog = false">Cancel</v-btn>
+                    <v-btn color="warning" @click="overwriteConfirmDialog = false; performTrainingDatasetCreation()">Overwrite</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>

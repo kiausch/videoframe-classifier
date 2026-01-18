@@ -39,13 +39,6 @@ export default {
             },
             overwriteConfirmDialog: false,
 
-            // Statistics
-            stats: {
-                videoCount: 0,
-                imageCount: 0,
-                selectedImages: 0
-            },
-
             // Constants
             VIDEO_EXTENSIONS: ['.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv', '.webm'],
             IMAGE_EXTENSIONS: ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'],

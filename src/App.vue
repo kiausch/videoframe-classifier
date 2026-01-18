@@ -641,6 +641,17 @@ export default {
             <v-container class="d-flex flex-column h-100 pa-2">
                 <v-card class="flex-0-0 mb-2">
                     <v-card-text>
+                        <!-- Project Folder Selection -->
+                        <v-text-field
+                            label="Choose Project Folder"
+                            :model-value="projectFolder"
+                            :title="projectFolder"
+                            append-inner-icon="mdi-folder-open"
+                            @click:append-inner="selectProjectFolder"
+                            variant="outlined"
+                            readonly
+                        ></v-text-field>
+
                         <!-- Video Folder Selection -->
                         <v-text-field
                             label="Choose Video Folder"
@@ -652,15 +663,6 @@ export default {
                             readonly
                         ></v-text-field>
 
-                        <v-text-field
-                            label="Choose Project Folder"
-                            :model-value="projectFolder"
-                            :title="projectFolder"
-                            append-inner-icon="mdi-folder-open"
-                            @click:append-inner="selectProjectFolder"
-                            variant="outlined"
-                            readonly
-                        ></v-text-field>
                     </v-card-text>
                 </v-card>
 

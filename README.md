@@ -52,6 +52,8 @@ Download pre-built binaries from [Releases](../../releases) for Windows, macOS, 
 - **SHIFT + click**: add image range to selection
 - **1-9**: Assign selected images to labels
 - **Ctrl/Cmd + Z**: Undo
+- **Ctrl/Cmd + +**: Increase image size
+- **Ctrl/Cmd + -**: Decrease image size
 - **ESC**: close video preview / discard active image selection
 
 ## Dataset Format

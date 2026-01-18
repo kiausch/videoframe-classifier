@@ -182,6 +182,16 @@ export default {
                     e.preventDefault();
                     this.undoLastMove();
                 }
+                // Ctrl/Meta + '+' to increase image size
+                else if ((e.key === '+' || e.key === '=') && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    this.previewSize = Math.min(this.previewSize + 16, 512);
+                }
+                // Ctrl/Meta + '-' to decrease image size
+                else if (e.key === '-' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    this.previewSize = Math.max(this.previewSize - 16, 128);
+                }
                 else if (e.key === 'Escape') {
                     e.preventDefault();
                     this.currentVideo = null;

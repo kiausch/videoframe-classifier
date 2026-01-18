@@ -89,16 +89,13 @@ export default {
     methods: {
         async loadSettings() {
             try {
-                this.selectedVideoFolder = await storage.getData('selectedVideoFolder');
-                this.loadVideoFiles();
-            } catch (error) {
-                this.selectedVideoFolder = null;
-            }
-            try {
                 this.projectFolder = await storage.getData('projectFolder');
-                await this.loadImageFiles();
                 await this.loadProjectFile();
+                await this.loadImageFiles();
                 await this.updateLabelStatistics();
+                if (this.selectedVideoFolder) {
+                    await this.loadVideoFiles();
+                }
             }
             catch (error) {
                 this.projectFolder = null;
@@ -209,8 +206,8 @@ export default {
                 if (folder) {
                     this.selectedVideoFolder = folder;
                     await this.loadVideoFiles();
+                    await this.saveProjectFile();
                     this.showMessage('Video folder loaded', 'success');
-                    await storage.setData('selectedVideoFolder', folder);
                 }
             } catch (error) {
                 this.showMessage('Error selecting folder: ' + error.message, 'error');
@@ -325,6 +322,7 @@ export default {
                 const content = await filesystem.readFile(projectPath);
                 const project = JSON.parse(content);
                 this.datasetLabels = project.labels || [];
+                this.selectedVideoFolder = project.selectedVideoFolder || null;
                 
                 if (project.processedVideos) {
                     for (const video of project.processedVideos) {
@@ -335,6 +333,7 @@ export default {
             } catch (error) {
                 this.showMessage('No project.json found or error reading file. Starting new project', 'success');
                 this.datasetLabels = [];
+                this.selectedVideoFolder = null;
                 this.processedVideoFiles.clear();
             }
         },
@@ -345,6 +344,7 @@ export default {
                 const projectPath = this.projectFolder + '/project.json';
                 const project = {
                     labels: this.datasetLabels,
+                    selectedVideoFolder: this.selectedVideoFolder,
                     processedVideos: [...this.processedVideoFiles]
                 };
                 const content = JSON.stringify(project, null, 2);

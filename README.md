@@ -59,7 +59,7 @@ Download pre-built binaries from [Releases](../../releases) for Windows, macOS, 
 ## Dataset Format
 
 ```
-output_folder/
+project_folder/
 ├── project.json          # Labels and processed videos list
 ├── pool/                 # Extracted images to label
 ├── classes/              # Labeled images
@@ -71,10 +71,9 @@ output_folder/
 │   │   │   ├── image_001.jpg
 │   │   │   └── ...
 │   │   └── label_2/
-│   ├── val/
-│   │   ├── label_1/
-│   │   └── label_2/
-│   └── dataset.yaml      # Generated during dataset creation
+│   └── val/
+│       ├── label_1/
+│       └── label_2/
 ```
 
 The `project.json` file stores:

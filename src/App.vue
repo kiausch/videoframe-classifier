@@ -673,20 +673,7 @@ export default {
                         this.showMessage('Error creating training dataset: ' + error.message, 'error');
                     }
                 }
-                
-                // Create dataset.yaml
-                try {
-                    const datasetPath = this.projectFolder + '/dataset/dataset.yaml';
-                    let yamlContent = 'names:\n';
-                    for (const [index, label] of this.datasetLabels.entries()) {
-                        yamlContent += `  ${index}: ${label}\n`;
-                    }
-                    yamlContent += `\nsplits:\n  train: ${this.trainingSplit}\n  val: ${1 - this.trainingSplit}\n`;
-                    await filesystem.writeFile(datasetPath, yamlContent);
-                    this.showMessage('Training dataset created successfully', 'success');
-                } catch (error) {
-                    this.showMessage('Error creating dataset.yaml: ' + error.message, 'error');
-                }
+                this.showMessage('Training dataset created successfully', 'success');
             } catch (error) {
                 this.showMessage('Error creating training dataset: ' + error.message, 'error');
             }

@@ -30,6 +30,8 @@ export default {
             labelStatistics: {},
             trainingSplit: 0.8,
 
+            trashImageCount: 0,
+
             // UI State
             snackbar: {
                 visible: false,
@@ -54,6 +56,9 @@ export default {
         },
         imageQueueFolder() {
             return this.projectFolder ? this.projectFolder + '/pool' : null;
+        },
+        trashFolder() {
+            return this.projectFolder ? this.projectFolder + '/trash' : null;
         },
         canPreprocess() {
             return this.selectedVideoFolder && this.projectFolder && this.videoFiles.length > 0;
@@ -178,6 +183,12 @@ export default {
                         }
                     });
                 }
+                else if (e.key === 'Delete') {
+                    e.preventDefault();
+                    if (this.selectedImages.length > 0 && this.projectFolder) {
+                        this.sendToTrash();
+                    }
+                }
                 else if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
                     e.preventDefault();
                     this.undoLastMove();
@@ -248,6 +259,18 @@ export default {
                     }
                 } catch (error) {
                     // Folder might not exist yet
+                }
+            }
+            this.trashImageCount = 0;
+            if (this.trashFolder) {
+                try {
+                    const trashStats = await filesystem.getStats(this.trashFolder);
+                    if (trashStats.isDirectory) {
+                        const trashFiles = await filesystem.readDirectory(this.trashFolder);
+                        this.trashImageCount = trashFiles.filter(file => file.type === 'FILE').length;
+                    }
+                } catch (error) {
+                    // Trash folder might not exist yet
                 }
             }
         },
@@ -561,6 +584,67 @@ export default {
                 this.showMessage(`Moved ${movedCount} image(s) to ${label}`, 'success');
             } catch (error) {
                 this.showMessage('Error assigning label: ' + error.message, 'error');
+            }
+        },
+
+        async sendToTrash() {
+            try {
+                if (!this.projectFolder || this.selectedImages.length === 0) {
+                    this.showMessage('Select project folder and images', 'warning');
+                    return;
+                }
+
+                try {
+                    await filesystem.createDirectory(this.trashFolder);
+                } catch (error) {
+                    // Folder might already exist
+                }
+
+                let movedCount = 0;
+                this.lastMoved = [];
+                let removeIndex;
+                for (const image of this.selectedImages) {
+                    try {
+                        const sourcePath = this.imageQueueFolder + '/' + image;
+                        const destPath = this.trashFolder + '/' + image;
+                        await filesystem.move(sourcePath, destPath);
+                        this.lastMoved.push({from: sourcePath, to: destPath});
+                        movedCount++;
+                        removeIndex = this.imageFiles.indexOf(image);
+                        this.imageFiles.splice(removeIndex, 1);
+                    } catch (error) {
+                        this.showMessage(`Error moving ${image}: ` + error.message, 'warning');
+                    }
+                }
+
+                let nextIndex = removeIndex;
+                if (nextIndex >= this.imageFiles.length) {
+                    nextIndex = this.imageFiles.length - 1;
+                }
+                if (nextIndex >= 0) {
+                    this.selectedImages = [this.imageFiles[nextIndex]];
+                    this.lastSelectedIndex = nextIndex;
+                } else {
+                    this.selectedImages = [];
+                    this.lastSelectedIndex = null;
+                }
+
+                this.trashImageCount += movedCount;
+                this.showMessage(`Moved ${movedCount} image(s) to trash`, 'success');
+            } catch (error) {
+                this.showMessage('Error sending to trash: ' + error.message, 'error');
+            }
+        },
+
+        async emptyTrash() {
+            try {
+                if (!this.trashFolder) return;
+                await filesystem.remove(this.trashFolder);
+                this.trashImageCount = 0;
+                this.lastMoved = [];
+                this.showMessage('Trash emptied', 'success');
+            } catch (error) {
+                this.showMessage('Error emptying trash: ' + error.message, 'error');
             }
         },
 
@@ -908,8 +992,8 @@ export default {
                     <v-card-text v-if="!projectFolder" class="flex-center mt-4">
                         <p class="text-caption text-disabled">Select project folder</p>
                     </v-card-text>
-                    <v-card-text v-else-if="datasetLabels.length == 0" class="flex-center mt-4">
-                        <p class="text-caption text-disabled">Create labels using the "Edit Labels" button</p>
+                    <v-card-text v-else-if="datasetLabels.length == 0">
+                        <p class="text-caption text-disabled text-center mt-2 mb-3">Create labels using the "Edit Labels" button</p>
                     </v-card-text>
                     <v-card-text v-else>
                         <!-- Label Buttons -->
@@ -925,6 +1009,23 @@ export default {
                                 <v-hotkey variant="plain" :keys="getKeyboardShortcut(index)"></v-hotkey>
                             </template>
                         </v-btn>
+                        <v-divider class="mb-2"></v-divider>
+                        <v-btn
+                            block
+                            color="error"
+                            :disabled="selectedImages.length === 0"
+                            @click="sendToTrash"
+                            prepend-icon="mdi-trash-can-outline"
+                            class="mb-1"
+                        >
+                            Trash
+                            <template v-slot:append>
+                                <v-hotkey variant="plain" keys="Del"></v-hotkey>
+                            </template>
+                        </v-btn>
+                        <div class="d-flex justify-center mt-1">
+                            <v-btn variant="plain" density="compact" size="x-small" class="text-disabled" @click="emptyTrash" :disabled="trashImageCount === 0">Empty Trash ({{ trashImageCount }})</v-btn>
+                        </div>
                     </v-card-text>
 
                 </v-card>

@@ -722,13 +722,13 @@ export default {
                 const valFolder = datasetFolder + '/val';
 
                 try {
-                    await filesystem.removeDirectory(trainFolder);
+                    await filesystem.remove(trainFolder);
                 } catch (e) {
                     // Folder doesn't exist, ignore
                 }
 
                 try {
-                    await filesystem.removeDirectory(valFolder);
+                    await filesystem.remove(valFolder);
                 } catch (e) {
                     // Folder doesn't exist, ignore
                 }

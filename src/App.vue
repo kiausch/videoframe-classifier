@@ -346,6 +346,7 @@ export default {
             if (!this.projectFolder) return;
 
             const projectPath = this.projectFolder + '/project.json';
+            this.processedVideoFiles.clear();
             try {
                 const content = await filesystem.readFile(projectPath);
                 const project = JSON.parse(content);
@@ -362,7 +363,6 @@ export default {
                 this.showMessage('No project.json found or error reading file. Starting new project', 'success');
                 this.datasetLabels = [];
                 this.selectedVideoFolder = null;
-                this.processedVideoFiles.clear();
             }
         },
 

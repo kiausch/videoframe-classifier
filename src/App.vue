@@ -21,6 +21,8 @@ export default {
             imageFiles: [],
             selectedImages: [],
             previewSize: 128,
+            showModelView: false,
+            modelViewUrls: {},
             lastSelectedIndex: null,
 
             // Right Column - Label Assignment
@@ -44,6 +46,7 @@ export default {
             // Constants
             VIDEO_EXTENSIONS: ['.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv', '.webm'],
             IMAGE_EXTENSIONS: ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'],
+            MODEL_INPUT_SIZE: 244,
         };
     },
     computed: {
@@ -82,6 +85,13 @@ export default {
         }
     },
     watch: {
+        showModelView(on) {
+            if (on) this.generateModelViews();
+        },
+        imageFiles() {
+            this.modelViewUrls = {};
+            if (this.showModelView) this.generateModelViews();
+        },
         isLabelEditorOpen(newVal, oldVal) {
             // When closing the label editor, write changes to project.json
             if (newVal == false && oldVal == true) {
@@ -439,6 +449,38 @@ export default {
         getImageUrl(imageName) {
             if (!this.imageQueueFolder) return '';
             return this.getServerUrl('images', imageName);
+        },
+
+        getDisplayUrl(imageName) {
+            if (this.showModelView && this.modelViewUrls[imageName]) {
+                return this.modelViewUrls[imageName];
+            }
+            return this.getImageUrl(imageName);
+        },
+
+        // Resamples the actual pixel data to the model input size (plain squash, no aspect preservation).
+        async generateModelViews() {
+            const size = this.MODEL_INPUT_SIZE;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingQuality = 'high';
+
+            for (const name of [...this.imageFiles]) {
+                if (!this.showModelView) return;
+                if (this.modelViewUrls[name]) continue;
+                try {
+                    const img = new Image();
+                    img.src = this.getImageUrl(name);
+                    await img.decode();
+                    ctx.clearRect(0, 0, size, size);
+                    ctx.drawImage(img, 0, 0, size, size);
+                    this.modelViewUrls[name] = canvas.toDataURL('image/png');
+                } catch (error) {
+                    // Leave the original image displayed
+                }
+            }
         },
 
         handleImageSelect(image, event) {
@@ -955,6 +997,10 @@ export default {
                                 <span v-text="previewSize + 'px'"></span>
                             </template>
                         </v-slider>
+                        <v-switch v-model="showModelView" :label="'Model view (' + MODEL_INPUT_SIZE + 'px)'"
+                            class="ml-4" density="compact" hide-details color="primary"
+                            :title="'Show images downscaled to the ' + MODEL_INPUT_SIZE + 'px input size the model sees'"
+                            @update:focused="blurActiveElement"></v-switch>
                         <v-btn icon="mdi-reload" @click="loadImageFiles" title="Reload Images"></v-btn>
                     </v-toolbar>
                     <v-card-text>
@@ -969,8 +1015,9 @@ export default {
                                     @click="handleImageSelect(image, $event)"
                                     @contextmenu.prevent="handleImageSelect(image, { ctrlKey: true, shiftKey: false })"
                                     draggable="true">
-                                    <img :src="getImageUrl(image)" :alt="image" :width="previewSize"
-                                        :height="previewSize">
+                                    <img :src="getDisplayUrl(image)" :alt="image" :width="previewSize"
+                                        :height="previewSize"
+                                        :class="{ pixelated: showModelView && modelViewUrls[image] }">
                                     <div class="image-name">{{ image }}</div>
                                 </div>
                             </div>

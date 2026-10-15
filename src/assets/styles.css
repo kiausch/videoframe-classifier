@@ -64,6 +64,10 @@
     display: block;
 }
 
+.gallery-item img.pixelated {
+    image-rendering: pixelated;
+}
+
 .image-name {
     position: absolute;
     bottom: 0;

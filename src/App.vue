@@ -143,6 +143,13 @@ export default {
         },
 
         setupKeyboardShortcuts() {
+            document.addEventListener('wheel', (e) => {
+                if (!e.ctrlKey) return;
+                e.preventDefault();
+                const delta = e.deltaY < 0 ? 16 : -16;
+                this.previewSize = Math.min(Math.max(this.previewSize + delta, 128), 512);
+            }, { passive: false });
+
             document.addEventListener('keydown', (e) => {
                 
                 // 0-9 for label assignment (skip if input is focused)
@@ -212,6 +219,10 @@ export default {
                 else if (e.key === '-' && (e.ctrlKey || e.metaKey)) {
                     e.preventDefault();
                     this.previewSize = Math.max(this.previewSize - 16, 128);
+                }
+                else if (e.key === 'm' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    this.showModelView = !this.showModelView;
                 }
                 else if (e.key === 'Escape') {
                     e.preventDefault();

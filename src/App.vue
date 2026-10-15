@@ -22,6 +22,19 @@ export default {
             selectedImages: [],
             previewSize: 128,
             showModelView: false,
+            showHelp: false,
+            shortcutList: [
+                ['Arrow keys', 'Navigate images'],
+                ['Ctrl/Cmd + click', 'Add single image to selection'],
+                ['Shift + click', 'Select image range'],
+                ['0-9', 'Assign selected images to label'],
+                ['Delete', 'Move selected images to trash'],
+                ['Ctrl/Cmd + Z', 'Undo'],
+                ['Ctrl/Cmd + +/-', 'Change image size'],
+                ['Ctrl + mouse wheel', 'Change image size'],
+                ['Ctrl/Cmd + M', 'Toggle model view'],
+                ['Esc', 'Close video preview / clear selection']
+            ],
             modelViewUrls: {},
             lastSelectedIndex: null,
 
@@ -880,12 +893,32 @@ export default {
             </v-card>
         </v-dialog>
 
+        <v-dialog v-model="showHelp" max-width="460px">
+            <v-card title="Keyboard Shortcuts">
+                <v-card-text>
+                    <v-table density="compact">
+                        <tbody>
+                            <tr v-for="[keys, desc] in shortcutList" :key="keys + desc">
+                                <td><strong>{{ keys }}</strong></td>
+                                <td>{{ desc }}</td>
+                            </tr>
+                        </tbody>
+                    </v-table>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn @click="showHelp = false">Close</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
         <v-app-bar color="primary" density="comfortable">
             <v-app-bar-title>Video Frame Classification Tool</v-app-bar-title>
             <template v-slot:append>
                 <span v-if="stats">
                     Videos: {{ stats.videoCount }} | Images: {{ stats.imageCount }} | Selected: {{ stats.selectedImages }}
                 </span>
+                <v-btn icon="mdi-information-outline" title="Keyboard Shortcuts" @click="showHelp = true"></v-btn>
             </template>
         </v-app-bar>
 

@@ -50,10 +50,13 @@ Download pre-built binaries from [Releases](../../releases) for Windows, macOS, 
 - **Arrow Keys**: Navigate images
 - **CTRL/Cmd + click**: add single image to selection
 - **SHIFT + click**: add image range to selection
-- **1-9**: Assign selected images to labels
+- **0-9**: Assign selected images to labels
+- **Delete**: Move selected images to trash
 - **Ctrl/Cmd + Z**: Undo
 - **Ctrl/Cmd + +**: Increase image size
 - **Ctrl/Cmd + -**: Decrease image size
+- **Ctrl + mouse wheel**: Increase/decrease image size
+- **Ctrl/Cmd + M**: Toggle model view
 - **ESC**: close video preview / discard active image selection
 
 ## Dataset Format

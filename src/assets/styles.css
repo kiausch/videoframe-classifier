@@ -43,6 +43,18 @@
     border: 2px solid #e0e0e0;
     transition: all 0.2s ease;
     user-select: none;
+    scroll-margin-top: 130px; /* clears the sticky toolbar */
+    scroll-margin-bottom: 20px;
+}
+
+.gallery-card {
+    overflow: visible !important; /* overflow:hidden would break sticky */
+}
+
+.gallery-toolbar {
+    position: sticky !important;
+    top: var(--v-layout-top, 0px);
+    z-index: 2;
 }
 
 .gallery-item:hover {

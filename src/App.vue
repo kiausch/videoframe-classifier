@@ -171,7 +171,7 @@ export default {
                 // arrow keys to move selection
                 else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
                     e.preventDefault();
-                    if (this.imageFiles.length === 0) return;
+                    if (this.imageFiles.length === 0 || !this.$refs.imageGallery) return;
 
                     let newIndex = this.lastSelectedIndex || 0;
                     let numColumns = window.getComputedStyle(this.$refs.imageGallery)?.getPropertyValue('grid-template-columns')?.split(' ')?.length || 1;
@@ -999,8 +999,8 @@ export default {
                 </v-card>
 
                 <!-- Image Gallery -->
-                <v-card v-else>
-                    <v-toolbar density="compact">
+                <v-card v-else class="gallery-card">
+                    <v-toolbar density="compact" class="gallery-toolbar">
                         <v-toolbar-title>Images to Classify</v-toolbar-title>
                         <v-slider v-model="previewSize" label="Image Size" min="128" max="512" step="16"
                             style="max-width: 250px" class="align-center" hide-details @update:focused="blurActiveElement">
@@ -1081,8 +1081,8 @@ export default {
                                 <v-hotkey variant="plain" keys="Del"></v-hotkey>
                             </template>
                         </v-btn>
-                        <div class="d-flex justify-center mt-1">
-                            <v-btn variant="plain" density="compact" size="x-small" class="text-disabled" @click="emptyTrash" :disabled="trashImageCount === 0">Empty Trash ({{ trashImageCount }})</v-btn>
+                        <div class="d-flex justify-center mt-2">
+                            <v-btn block variant="tonal" color="error" density="compact" size="small" prepend-icon="mdi-delete-empty-outline" @click="emptyTrash" :disabled="trashImageCount === 0">Empty Trash ({{ trashImageCount }})</v-btn>
                         </div>
                     </v-card-text>
 
